@@ -1,6 +1,47 @@
 <section class="viz-page">
   <p class="status">{{ loadState.status() }}</p>
-  <div #chart class="chart-container">
+
+  <div class="controls" style="flex-direction:column;align-items:flex-start;gap:0.75rem">
+
+    <!-- Feature checkboxes -->
+    <div class="control-group" style="flex-wrap:wrap;align-items:center;gap:0.4rem 0.6rem">
+      <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;flex-shrink:0;margin-right:0.25rem">
+        {{ langService.lang() === 'fr' ? 'Caractéristiques' : 'Features' }}
+      </span>
+      @for (dim of dimControls; track dim.key) {
+        <label class="chip-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="dim.checked"
+            (change)="onDimChange()"
+            [disabled]="dim.checked && !canUncheck"
+            style="display:none">
+          {{ langService.lang() === 'fr' ? dim.fr : dim.en }}
+        </label>
+      }
+    </div>
+
+    <!-- Family count slider -->
+    <div class="control-group" style="align-items:center;gap:0.65rem">
+      <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;flex-shrink:0">
+        {{ langService.lang() === 'fr' ? 'Familles affichées' : 'Families shown' }}
+      </span>
+      <input
+        type="range"
+        min="2"
+        max="10"
+        step="1"
+        [(ngModel)]="maxFamilies"
+        (input)="onFamilyCountChange()"
+        style="width:120px;accent-color:var(--accent)">
+      <span style="font-size:0.88rem;font-weight:600;color:var(--accent);min-width:1.4rem;text-align:center">
+        {{ maxFamilies }}
+      </span>
+    </div>
+
+  </div>
+
+  <div #chart class="chart-container" style="min-height:520px">
     @if (loadState.loading()) {
       <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
     }

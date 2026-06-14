@@ -1,22 +1,72 @@
 <section class="viz-page">
   <p class="status">{{ loadState.status() }}</p>
-  <div class="controls">
-    <div class="control-group genre-filters">
+
+  <div class="controls" style="flex-direction:column;align-items:flex-start;gap:0.75rem">
+
+    <!-- Genre chip checkboxes -->
+    <div class="control-group" style="flex-wrap:wrap;align-items:center;gap:0.4rem 0.6rem">
+      <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;flex-shrink:0;margin-right:0.25rem">
+        {{ langService.lang() === 'fr' ? 'Genres' : 'Genres' }}
+      </span>
       @for (g of genres; track g) {
-        <label>
-          <input type="checkbox" [checked]="isSelected(g)" (change)="toggleGenre(g, $any($event.target).checked)" />
-          {{ genreLabels[g] }}
+        <label class="chip-label">
+          <input
+            type="checkbox"
+            [checked]="isSelected(g)"
+            (change)="toggleGenre(g, $any($event.target).checked)"
+            style="display:none">
+          {{ langService.lang() === 'fr' ? genreLabelsFr[g] : genreLabelsEn[g] }}
         </label>
       }
     </div>
-    <label>Sample size {{ sampleSize }}
-      <input type="range" min="100" max="2000" step="50" [(ngModel)]="sampleSize" (ngModelChange)="refresh()" />
-    </label>
-    <label><input type="checkbox" [(ngModel)]="sharedScales" (ngModelChange)="refresh()" /> Shared scales</label>
-    <label>Search <input type="text" [(ngModel)]="search" (ngModelChange)="refresh()" placeholder="Track or artist" /></label>
-    <button type="button" (click)="reset()">Reset</button>
+
+    <!-- Sample size + shared axes + search -->
+    <div class="control-group" style="flex-wrap:wrap;align-items:center;gap:0.75rem 1.25rem">
+
+      <div style="display:flex;align-items:center;gap:0.6rem">
+        <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">
+          {{ langService.lang() === 'fr' ? 'Échantillon' : 'Sample size' }}
+        </span>
+        <input
+          type="range"
+          min="100" max="2000" step="50"
+          [(ngModel)]="sampleSize"
+          (ngModelChange)="refresh()"
+          style="width:110px;accent-color:var(--accent)">
+        <span style="font-size:0.88rem;font-weight:600;color:var(--accent);min-width:2.2rem">
+          {{ sampleSize }}
+        </span>
+      </div>
+
+      <label class="chip-label" style="cursor:pointer">
+        <input
+          type="checkbox"
+          [(ngModel)]="sharedScales"
+          (ngModelChange)="refresh()"
+          style="display:none">
+        {{ langService.lang() === 'fr' ? 'Axes partagés' : 'Shared axes' }}
+      </label>
+
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">
+          {{ langService.lang() === 'fr' ? 'Recherche' : 'Search' }}
+        </span>
+        <input
+          type="text"
+          [(ngModel)]="search"
+          (ngModelChange)="refresh()"
+          [placeholder]="langService.lang() === 'fr' ? 'Titre ou artiste' : 'Track or artist'"
+          style="padding:0.38rem 0.6rem;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--bg-elevated);color:var(--text);font-size:0.85rem;width:160px">
+      </div>
+
+      <button type="button" (click)="reset()">
+        {{ langService.lang() === 'fr' ? 'Réinitialiser' : 'Reset' }}
+      </button>
+
+    </div>
   </div>
-  <div #chart class="chart-container">
+
+  <div #chart class="chart-container" style="min-height:560px;height:auto">
     @if (loadState.loading()) {
       <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
     }

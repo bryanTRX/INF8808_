@@ -1,6 +1,24 @@
 <section class="viz-page">
   <p class="status">{{ loadState.status() }}</p>
-  <div #chart class="chart-container">
+
+  <div class="controls">
+    <div class="control-group" style="align-items:center;gap:0.5rem">
+      <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;flex-shrink:0;margin-right:0.15rem">
+        {{ langService.lang() === 'fr' ? 'Tri par contenu explicite' : 'Sort by explicit share' }}
+      </span>
+      <button type="button" [class.active]="sortOrder === 'asc'" (click)="setSortOrder('asc')">
+        {{ langService.lang() === 'fr' ? '↑ Croissant' : '↑ Ascending' }}
+      </button>
+      <button type="button" [class.active]="sortOrder === 'desc'" (click)="setSortOrder('desc')">
+        {{ langService.lang() === 'fr' ? '↓ Décroissant' : '↓ Descending' }}
+      </button>
+      <button type="button" [class.active]="sortOrder === 'alpha'" (click)="setSortOrder('alpha')">
+        A – Z
+      </button>
+    </div>
+  </div>
+
+  <div #chart class="chart-container" style="min-height:500px">
     @if (loadState.loading()) {
       <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
     }

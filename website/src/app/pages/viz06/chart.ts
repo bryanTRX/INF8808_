@@ -1,10 +1,14 @@
 import * as d3 from 'd3';
 import type { Lang } from '../../core/services/lang.service';
 import { TrackRow } from '../../core/models/track-row';
-import { CHART, styleAxis } from '../../viz-shared/utils/chart-theme';
+import { getChartTheme } from '../../viz-shared/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
 
-const GENRES = [{ id: 'pop' as const, label: 'Pop', color: '#2f80ed' }, { id: 'rock' as const, label: 'Rock', color: '#d1495b' }];
+// Colors align with GENRE_FAMILIES for visual consistency
+const GENRES = [
+  { id: 'pop' as const, label: 'Pop', color: '#4e9af1' },
+  { id: 'rock' as const, label: 'Rock', color: '#e05252' },
+];
 
 const L = (lang: Lang) => lang === 'fr' ? {
   tracks: 'titres', axisY: 'Popularité (0–100)',
@@ -61,59 +65,167 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
   function render() {
     container.innerHTML = '';
     const lbl = L(_lang);
+    const theme = getChartTheme();
     const facets = GENRES.map((g) => [g, byGenre[g.id]] as const).filter(([, v]) => v.length);
-    const width = Math.max(container.clientWidth || 900, 720);
-    const fW = width / 2, fH = 400, height = fH + 8;
-    const m = { top: 48, right: 24, bottom: 52, left: 60 };
+    const width = Math.max(container.clientWidth || 900, 640);
+    const fW = width / 2;
+    const fH = 420;
+    const height = fH + 8;
+    const m = { top: 50, right: 24, bottom: 56, left: 60 };
     const allV = facets.flatMap(([, v]) => v);
-    const xDom = state.sharedScales ? [0, 1] as [number, number] : null;
-    const yDom = state.sharedScales ? [0, d3.max(allV, (d) => d.popularity) || 100] as [number, number] : null;
+    const xDom = state.sharedScales ? ([0, 1] as [number, number]) : null;
+    const yDom = state.sharedScales
+      ? ([0, d3.max(allV, (d) => d.popularity) || 100] as [number, number])
+      : null;
     const srch = state.search.toLowerCase();
     const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
 
     facets.forEach(([meta, values], idx) => {
-      const iW = fW - m.left - m.right, iH = fH - m.top - m.bottom;
+      const iW = fW - m.left - m.right;
+      const iH = fH - m.top - m.bottom;
       const pts = sample(values, state.sampleSize);
-      const xSc = d3.scaleLinear().domain(xDom || d3.extent(values, (d) => d.acousticness) as [number, number]).nice().range([0, iW]);
-      const ySc = d3.scaleLinear().domain(yDom || d3.extent(values, (d) => d.popularity) as [number, number]).nice().range([iH, 0]);
-      const facet = svg.append('g').attr('transform', `translate(${idx * fW + m.left},${m.top})`);
-      facet.insert('rect', ':first-child').attr('x', -8).attr('y', -32).attr('width', iW + 16).attr('height', iH + 44).attr('rx', 8).attr('fill', '#1a1a1a').attr('stroke', '#2a2a2a');
-      facet.append('text').attr('y', -14).attr('fill', meta.color).attr('font-size', 12).attr('font-weight', 600).text(`${meta.label} · ${d3.format(',')(values.length)} ${lbl.tracks}`);
-      facet.append('g').attr('class', 'grid').call(d3.axisLeft(ySc).ticks(5).tickSize(-iW).tickFormat(() => ''));
-      const xAx = facet.append('g').attr('class', 'axis').attr('transform', `translate(0,${iH})`).call(d3.axisBottom(xSc).ticks(5));
-      const yAx = facet.append('g').attr('class', 'axis').call(d3.axisLeft(ySc).ticks(5));
-      styleAxis(xAx as never); styleAxis(yAx as never);
-      if (idx === 0) facet.append('text').attr('class', 'axis-label').attr('transform', 'rotate(-90)').attr('x', -iH / 2).attr('y', -46).attr('text-anchor', 'middle').attr('fill', CHART.secondary).text(lbl.axisY);
-      facet.append('text').attr('class', 'axis-label').attr('x', iW / 2).attr('y', iH + 42).attr('text-anchor', 'middle').attr('fill', CHART.secondary).text(lbl.axisX);
+      const xSc = d3
+        .scaleLinear()
+        .domain(xDom ?? (d3.extent(values, (d) => d.acousticness) as [number, number]))
+        .nice()
+        .range([0, iW]);
+      const ySc = d3
+        .scaleLinear()
+        .domain(yDom ?? (d3.extent(values, (d) => d.popularity) as [number, number]))
+        .nice()
+        .range([iH, 0]);
 
-      const matches = (d: ParsedTrack) => !!srch && `${d.trackName} ${d.artists}`.toLowerCase().includes(srch);
-      facet.selectAll('.point').data(pts, (d) => (d as ParsedTrack).trackId).join('circle')
-        .attr('cx', (d) => xSc(d.acousticness)).attr('cy', (d) => ySc(d.popularity))
-        .attr('r', (d) => matches(d) ? 4.5 : 2.8).attr('fill', meta.color)
-        .attr('opacity', (d) => srch ? (matches(d) ? 0.95 : 0.07) : 0.48)
+      const facet = svg.append('g').attr('transform', `translate(${idx * fW + m.left},${m.top})`);
+
+      // Theme-aware facet background
+      facet
+        .insert('rect', ':first-child')
+        .attr('x', -m.left + 4)
+        .attr('y', -m.top + 4)
+        .attr('width', iW + m.left + m.right - 8)
+        .attr('height', iH + m.top + m.bottom - 8)
+        .attr('rx', 10)
+        .attr('fill', theme.panel)
+        .attr('stroke', theme.border)
+        .attr('stroke-width', 1);
+
+      facet
+        .append('text')
+        .attr('y', -18)
+        .attr('fill', meta.color)
+        .style('font-size', '12px')
+        .style('font-weight', '700')
+        .text(`${meta.label}  ·  ${d3.format(',')(values.length)} ${lbl.tracks}`);
+
+      // Grid
+      facet
+        .append('g')
+        .attr('class', 'grid')
+        .call(d3.axisLeft(ySc).ticks(5).tickSize(-iW).tickFormat(() => ''))
+        .selectAll('line')
+        .attr('stroke', theme.border)
+        .attr('stroke-opacity', 0.4);
+      facet.select('.grid .domain').remove();
+
+      // Axes
+      facet.append('g').attr('class', 'axis').attr('transform', `translate(0,${iH})`).call(d3.axisBottom(xSc).ticks(5));
+      facet.append('g').attr('class', 'axis').call(d3.axisLeft(ySc).ticks(5));
+
+      if (idx === 0) {
+        facet.append('text').attr('class', 'axis-label').attr('transform', 'rotate(-90)').attr('x', -iH / 2).attr('y', -46).attr('text-anchor', 'middle').text(lbl.axisY);
+      }
+      facet.append('text').attr('class', 'axis-label').attr('x', iW / 2).attr('y', iH + 46).attr('text-anchor', 'middle').text(lbl.axisX);
+
+      // Points
+      const matches = (d: ParsedTrack) =>
+        !!srch && `${d.trackName} ${d.artists}`.toLowerCase().includes(srch);
+
+      facet
+        .selectAll<SVGCircleElement, ParsedTrack>('.point')
+        .data(pts, (d) => d.trackId)
+        .join('circle')
+        .attr('class', 'point')
+        .attr('cx', (d) => xSc(d.acousticness))
+        .attr('cy', (d) => ySc(d.popularity))
+        .attr('r', (d) => (matches(d) ? 5 : 2.8))
+        .attr('fill', meta.color)
+        .attr('opacity', (d) => (srch ? (matches(d) ? 0.95 : 0.07) : 0.42))
         .on('mouseenter', function (event, d) {
-          d3.select(this).attr('r', 5.5).attr('opacity', 1);
-          const label = d.acousticness < 0.33 ? lbl.labels.low : d.acousticness > 0.66 ? lbl.labels.high : lbl.labels.mid;
-          tip.show(event, `<div><strong>${d.trackName}</strong></div><div class="muted">${d.artists}</div><div>${meta.label}</div>
-             <div>${lbl.tip.acoustic} : <span class="tooltip-value">${d3.format('.2f')(d.acousticness)}</span> (${label})</div>
-             <div>${lbl.tip.pop} : <span class="tooltip-value">${d3.format('.0f')(d.popularity)}</span></div>`);
+          d3.select(this).attr('r', 6).attr('opacity', 1);
+          const acousticLabel =
+            d.acousticness < 0.33
+              ? lbl.labels.low
+              : d.acousticness > 0.66
+                ? lbl.labels.high
+                : lbl.labels.mid;
+          tip.show(
+            event,
+            `<div style="margin-bottom:0.35rem">
+              <strong style="font-size:0.9rem">${d.trackName}</strong>
+            </div>
+            <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.45rem">${d.artists}</div>
+            <div style="border-top:1px solid var(--border);padding-top:0.4rem;font-size:0.82rem">
+              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+                <span style="color:var(--muted)">${lbl.tip.acoustic}</span>
+                <span class="tooltip-value">${d3.format('.2f')(d.acousticness)} <span style="font-weight:400;color:var(--muted)">(${acousticLabel})</span></span>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+                <span style="color:var(--muted)">${lbl.tip.pop}</span>
+                <span class="tooltip-value">${d3.format('.0f')(d.popularity)}</span>
+              </div>
+            </div>`,
+          );
         })
         .on('mousemove', (event) => tip.move(event))
-        .on('mouseleave', function (_, d) { d3.select(this).attr('r', matches(d) ? 4.5 : 2.8).attr('opacity', srch ? (matches(d) ? 0.95 : 0.07) : 0.48); tip.hide(); });
+        .on('mouseleave', function (_, d) {
+          d3.select(this)
+            .attr('r', matches(d) ? 5 : 2.8)
+            .attr('opacity', srch ? (matches(d) ? 0.95 : 0.07) : 0.42);
+          tip.hide();
+        });
 
+      // Regression line (dashed — overall trend)
       const fit = linReg(values);
       if (fit) {
-        facet.append('path').datum(xSc.domain().map((x) => ({ x, y: fit.intercept + fit.slope * x }))).attr('fill', 'none').attr('stroke', meta.color).attr('stroke-width', 2)
+        facet
+          .append('path')
+          .datum(xSc.domain().map((x) => ({ x, y: fit.intercept + fit.slope * x })))
+          .attr('fill', 'none')
+          .attr('stroke', meta.color)
+          .attr('stroke-width', 1.8)
+          .attr('stroke-dasharray', '5,4')
+          .attr('stroke-linecap', 'round')
+          .attr('opacity', 0.8)
           .attr('d', d3.line<{ x: number; y: number }>().x((d) => xSc(d.x)).y((d) => ySc(d.y)).defined((d) => Number.isFinite(d.y)));
-        facet.append('text').attr('x', iW - 4).attr('y', 14).attr('text-anchor', 'end').attr('fill', meta.color).attr('font-size', 11).attr('font-weight', 700).text(`r = ${d3.format('+.2f')(fit.r)}`);
+
+        // Pearson r badge
+        const rText = `r = ${d3.format('+.2f')(fit.r)}`;
+        const bW = rText.length * 7.2 + 10;
+        const bg = facet.append('g').attr('transform', `translate(${iW - bW - 2},4)`);
+        bg.append('rect').attr('width', bW).attr('height', 18).attr('rx', 3).attr('fill', theme.panel).attr('stroke', meta.color).attr('stroke-width', 1).attr('opacity', 0.9);
+        bg.append('text').attr('x', 5).attr('y', 13).attr('fill', meta.color).style('font-size', '10.5px').style('font-weight', '700').text(rText);
       }
-      facet.append('path').datum(binnedMeans(values, 8)).attr('fill', 'none').attr('stroke', meta.color).attr('stroke-width', 2).attr('stroke-dasharray', '5,3')
+
+      // Binned mean line (solid — non-linear trend)
+      facet
+        .append('path')
+        .datum(binnedMeans(values, 8))
+        .attr('fill', 'none')
+        .attr('stroke', meta.color)
+        .attr('stroke-width', 2.2)
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-linejoin', 'round')
+        .attr('opacity', 0.65)
         .attr('d', d3.line<{ x: number; y: number }>().x((d) => xSc(d.x)).y((d) => ySc(d.y)));
-      const legendY = iH - 36;
+
+      // In-facet legend
+      const legY = iH - 38;
       lbl.legend.forEach((label, li) => {
-        const lg = facet.append('g').attr('transform', `translate(4,${legendY + li * 16})`);
-        lg.append('line').attr('x1', 0).attr('x2', 22).attr('y1', 5).attr('y2', 5).attr('stroke', meta.color).attr('stroke-width', 1.5).attr('stroke-dasharray', li === 1 ? '5,3' : null);
-        lg.append('text').attr('x', 27).attr('y', 9).attr('fill', CHART.muted).attr('font-size', 9).text(label);
+        const lg = facet.append('g').attr('transform', `translate(6,${legY + li * 18})`);
+        lg.append('line').attr('x1', 0).attr('x2', 22).attr('y1', 5).attr('y2', 5)
+          .attr('stroke', meta.color).attr('stroke-width', li === 0 ? 1.8 : 2.2)
+          .attr('stroke-dasharray', li === 0 ? '5,4' : null);
+        lg.append('text').attr('x', 28).attr('y', 9).attr('class', 'legend-label').style('font-size', '9.5px').text(label);
       });
     });
   }

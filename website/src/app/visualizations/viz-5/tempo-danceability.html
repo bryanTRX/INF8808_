@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tempo vs Danceability by Genre</title>
+    <link rel="stylesheet" href="tempo-danceability.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="viz-header">
+        <div>
+          <p class="eyebrow">Faceted scatter plot</p>
+          <h1>Tempo and danceability across genres</h1>
+          <p class="lede">
+            Does higher tempo strictly equate to higher danceability across all genres?
+          </p>
+        </div>
+        <div class="stats" aria-label="Dataset summary">
+          <span><strong id="track-count">—</strong> tracks</span>
+          <span><strong id="facet-count">—</strong> facets</span>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="Chart controls">
+        <label class="control-block">
+          <span>Points per facet</span>
+          <input id="sample-size" type="range" min="150" max="900" step="50" value="500" />
+          <strong id="sample-size-value">500</strong>
+        </label>
+
+        <label class="control-block toggle-block">
+          <input id="shared-scales" type="checkbox" checked />
+          <span>Shared tempo &amp; danceability scales (compare slopes fairly)</span>
+        </label>
+
+        <div class="control-block grow">
+          <span>Search track or artist</span>
+          <input id="search" type="search" placeholder="e.g., Daft Punk" />
+        </div>
+
+        <button id="reset" type="button">Reset</button>
+      </section>
+
+      <section class="chart-area">
+        <aside class="side-panel">
+          <h2>Genres</h2>
+          <div id="genre-filter" class="genre-filter"></div>
+
+          <h2>Correlation (Pearson r)</h2>
+          <p class="panel-note">
+            A strict tempo → danceability rule would show <strong>r ≈ 1</strong> and similar positive slopes in every facet.
+          </p>
+          <div id="metrics" class="metrics"></div>
+
+          <h2>Legend</h2>
+          <div id="legend" class="legend"></div>
+        </aside>
+
+        <div id="chart" class="chart" aria-label="Faceted tempo versus danceability scatter plots"></div>
+      </section>
+
+      <p id="status" class="status">Starting…</p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="tempo-danceability.js"></script>
+  </body>
+</html>

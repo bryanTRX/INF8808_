@@ -1,0 +1,28 @@
+<section class="viz-page">
+  <p class="status">{{ loadState.status() }}</p>
+  <div class="side-panel">
+    @for (s of stats; track s.id) {
+      <div class="compare-card">
+        <h3 [style.color]="s.color">{{ s.label }} ({{ s.count | number }} tracks)</h3>
+        <dl>
+          <dt>Pearson r</dt><dd>{{ s.fit ? (s.fit.r | number:'1.3-3') : 'n/a' }}</dd>
+          <dt>Mean pop. (low acoustic)</dt><dd>{{ s.meanPopLow != null ? (s.meanPopLow | number:'1.1-1') : 'n/a' }}</dd>
+          <dt>Mean pop. (high acoustic)</dt><dd>{{ s.meanPopHigh != null ? (s.meanPopHigh | number:'1.1-1') : 'n/a' }}</dd>
+        </dl>
+      </div>
+    }
+  </div>
+  <div class="controls">
+    <label>Sample size {{ sampleSize }}
+      <input type="range" min="100" max="2000" step="50" [(ngModel)]="sampleSize" (ngModelChange)="refresh()" />
+    </label>
+    <label><input type="checkbox" [(ngModel)]="sharedScales" (ngModelChange)="refresh()" /> Shared scales</label>
+    <label>Search <input type="text" [(ngModel)]="search" (ngModelChange)="refresh()" /></label>
+    <button type="button" (click)="reset()">Reset</button>
+  </div>
+  <div #chart class="chart-container">
+    @if (loadState.loading()) {
+      <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+    }
+  </div>
+</section>

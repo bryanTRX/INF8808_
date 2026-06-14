@@ -1,0 +1,37 @@
+<section class="viz-page">
+  <p class="status">{{ loadState.status() }}</p>
+
+  <div class="controls artist-controls">
+    <label>{{ ui().search }} <input type="text" [(ngModel)]="search" [placeholder]="ui().searchPlaceholder" /></label>
+    <label>{{ ui().trendMetric }}
+      <select [(ngModel)]="trendMetric" (ngModelChange)="refresh()">
+        @for (m of trendMetrics(); track m.key) {
+          <option [value]="m.key">{{ m.label }}</option>
+        }
+      </select>
+    </label>
+    <div class="artist-checkboxes">
+      @for (p of filteredPerformers(); track p.name) {
+        <label>
+          <input type="checkbox" [checked]="isSelected(p.name)" (change)="toggleArtist(p.name, $any($event.target).checked)" />
+          {{ p.rank }}. {{ p.name }}
+        </label>
+      }
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="chart-container radar-panel">
+      <h2>{{ ui().radarTitle }}</h2>
+      <div #radarChart class="radar-slot">
+        @if (loadState.loading()) {
+          <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+        }
+      </div>
+    </div>
+    <div class="chart-container trend-panel">
+      <h2>{{ ui().trendTitle }}</h2>
+      <div #trendChart class="trend-slot"></div>
+    </div>
+  </div>
+</section>

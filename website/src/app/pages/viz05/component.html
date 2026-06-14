@@ -1,0 +1,24 @@
+<section class="viz-page">
+  <p class="status">{{ loadState.status() }}</p>
+  <div class="controls">
+    <div class="control-group genre-filters">
+      @for (g of genres; track g) {
+        <label>
+          <input type="checkbox" [checked]="isSelected(g)" (change)="toggleGenre(g, $any($event.target).checked)" />
+          {{ genreLabels[g] }}
+        </label>
+      }
+    </div>
+    <label>Sample size {{ sampleSize }}
+      <input type="range" min="100" max="2000" step="50" [(ngModel)]="sampleSize" (ngModelChange)="refresh()" />
+    </label>
+    <label><input type="checkbox" [(ngModel)]="sharedScales" (ngModelChange)="refresh()" /> Shared scales</label>
+    <label>Search <input type="text" [(ngModel)]="search" (ngModelChange)="refresh()" placeholder="Track or artist" /></label>
+    <button type="button" (click)="reset()">Reset</button>
+  </div>
+  <div #chart class="chart-container">
+    @if (loadState.loading()) {
+      <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+    }
+  </div>
+</section>

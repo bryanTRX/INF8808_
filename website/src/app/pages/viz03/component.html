@@ -1,0 +1,8 @@
+<section class="viz-page">
+  <p class="status">{{ loadState.status() }}</p>
+  <div #chart class="chart-container">
+    @if (loadState.loading()) {
+      <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+    }
+  </div>
+</section>

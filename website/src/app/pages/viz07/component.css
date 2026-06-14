@@ -1,0 +1,14 @@
+.answer-card {
+  background: rgba(29, 185, 84, 0.1);
+  border: 1px solid rgba(29, 185, 84, 0.35);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.answer-headline { margin: 0 0 0.35rem; font-weight: 700; color: var(--accent); }
+.answer-body { margin: 0; color: var(--text-secondary); font-size: 0.92rem; }
+.stat-label { font-size: 0.78rem; color: var(--muted); }
+.stat-value { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+.stat-hint { font-size: 0.72rem; color: var(--muted); }
+.bar.is-hovered { fill: var(--chart-bar) !important; }

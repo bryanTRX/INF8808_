@@ -1,0 +1,27 @@
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-grid h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.radar-slot,
+.trend-slot {
+  min-height: 320px;
+}
+
+.artist-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  width: 100%;
+}
+
+.artist-controls {
+  flex-direction: column;
+  align-items: flex-start;
+}

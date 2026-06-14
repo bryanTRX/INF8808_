@@ -1,0 +1,146 @@
+import * as d3 from 'd3';
+import { getChartTheme } from '../../viz-shared/chart-theme';
+import { TrackRow } from '../../core/models/track-row';
+import { VizTooltip } from '../../viz-shared/utils/tooltip';
+
+const NUMERIC_FEATURES = [
+  'danceability', 'energy', 'valence', 'loudness', 'tempo',
+  'acousticness', 'speechiness', 'instrumentalness', 'duration_ms',
+] as const;
+
+const FEATURE_LABELS: Record<(typeof NUMERIC_FEATURES)[number], string> = {
+  danceability: 'Danceability', energy: 'Energy', valence: 'Valence', loudness: 'Loudness',
+  tempo: 'Tempo', acousticness: 'Acousticness', speechiness: 'Speechiness',
+  instrumentalness: 'Instrumentalness', duration_ms: 'Duration',
+};
+
+const FEATURE_DESCRIPTIONS: Record<(typeof NUMERIC_FEATURES)[number], string> = {
+  danceability: 'Suitability of a track for dancing.',
+  energy: 'Intensity and activity level of the track.',
+  valence: 'Musical positivity of the track.',
+  loudness: 'Overall loudness in decibels.',
+  tempo: 'Speed of the track in beats per minute.',
+  acousticness: 'Confidence that the track is acoustic.',
+  speechiness: 'Presence of spoken words in the track.',
+  instrumentalness: 'Prediction that the track contains no vocals.',
+  duration_ms: 'Duration of the track in milliseconds.',
+};
+
+export type CorrelationMethod = 'pearson' | 'spearman';
+
+function pearson(values: { x: number; y: number }[]): number {
+  const meanX = d3.mean(values, (d) => d.x)!;
+  const meanY = d3.mean(values, (d) => d.y)!;
+  let num = 0, denX = 0, denY = 0;
+  values.forEach((d) => {
+    const dx = d.x - meanX, dy = d.y - meanY;
+    num += dx * dy; denX += dx * dx; denY += dy * dy;
+  });
+  return num / Math.sqrt(denX * denY) || 0;
+}
+
+function getRanks(values: number[]): number[] {
+  const sorted = values.map((value, index) => ({ value, index })).sort((a, b) => d3.ascending(a.value, b.value));
+  const ranks = new Array<number>(values.length);
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j + 1].value === sorted[i].value) j++;
+    const avg = (i + j + 2) / 2;
+    for (let k = i; k <= j; k++) ranks[sorted[k].index] = avg;
+    i = j + 1;
+  }
+  return ranks;
+}
+
+function spearman(data: TrackRow[], feature: string): number {
+  const values = data
+    .map((d) => ({ x: Number(d[feature]), y: Number(d.popularity) }))
+    .filter((d) => Number.isFinite(d.x) && Number.isFinite(d.y));
+  const xRanks = getRanks(values.map((d) => d.x));
+  const yRanks = getRanks(values.map((d) => d.y));
+  return pearson(xRanks.map((x, i) => ({ x, y: yRanks[i] })));
+}
+
+function calculateCorrelations(data: TrackRow[], method: CorrelationMethod) {
+  return NUMERIC_FEATURES.map((feature) => ({
+    feature,
+    label: FEATURE_LABELS[feature],
+    correlation: method === 'spearman'
+      ? spearman(data, feature)
+      : pearson(data.map((d) => ({ x: Number(d[feature]), y: Number(d.popularity) }))
+          .filter((d) => Number.isFinite(d.x) && Number.isFinite(d.y))),
+    description: FEATURE_DESCRIPTIONS[feature],
+  })).sort((a, b) => d3.descending(a.correlation, b.correlation));
+}
+
+export interface Viz04Chart {
+  setMethod: (method: CorrelationMethod) => void;
+  resize: () => void;
+  destroy: () => void;
+}
+
+export function createViz04Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip): Viz04Chart {
+  const data = rows.filter((d) => Number.isFinite(Number(d.popularity)));
+  let method: CorrelationMethod = 'pearson';
+
+  function render() {
+    container.innerHTML = '';
+    const width = Math.max(640, container.clientWidth || 900);
+    const height = Math.max(480, container.clientHeight || 520);
+    const margin = { top: 72, right: 60, bottom: 56, left: 150 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const correlations = calculateCorrelations(data, method);
+    const limit = Math.max(Math.abs(d3.min(correlations, (d) => d.correlation)!),
+      Math.abs(d3.max(correlations, (d) => d.correlation)!)) + 0.03;
+
+    const x = d3.scaleLinear().domain([-limit, limit]).range([0, innerWidth]);
+    const y = d3.scaleBand().domain(correlations.map((d) => d.label)).range([0, innerHeight]).padding(0.25);
+
+    const theme = getChartTheme();
+    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    svg.append('text').attr('class', 'chart-title').attr('x', margin.left).attr('y', 28).attr('font-size', 18)
+      .text('Correlation Between Audio Features and Popularity');
+    svg.append('text').attr('class', 'chart-subtitle').attr('x', margin.left).attr('y', 50).attr('font-size', 12)
+      .text(`Features ranked by ${method === 'spearman' ? 'Spearman' : 'Pearson'} correlation with Spotify popularity.`);
+
+    g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerHeight})`).call(d3.axisBottom(x).ticks(6));
+    g.append('g').attr('class', 'axis').call(d3.axisLeft(y));
+    g.append('line').attr('x1', x(0)).attr('x2', x(0)).attr('y1', 0).attr('y2', innerHeight).attr('stroke', theme.border);
+
+    g.selectAll('.bar').data(correlations).join('rect').attr('class', 'bar')
+      .attr('y', (d) => y(d.label)!)
+      .attr('x', (d) => (d.correlation >= 0 ? x(0) : x(d.correlation)))
+      .attr('width', (d) => Math.abs(x(d.correlation) - x(0)))
+      .attr('height', y.bandwidth())
+      .attr('fill', (d) => (d.correlation >= 0 ? '#4C78A8' : '#E45756'))
+      .on('mouseover', function (event, d) {
+        d3.select(this).attr('opacity', 0.75);
+        tip.show(event, `<strong>${d.label}</strong><br>Method: ${method}<br>Correlation: ${d.correlation.toFixed(3)}<br>${d.description}`);
+      })
+      .on('mousemove', (event) => tip.move(event))
+      .on('mouseout', function () { d3.select(this).attr('opacity', 1); tip.hide(); });
+
+    g.selectAll('.label').data(correlations).join('text')
+      .attr('class', 'value-label')
+      .attr('x', (d) => (d.correlation >= 0 ? x(d.correlation) + 5 : x(d.correlation) - 35))
+      .attr('y', (d) => y(d.label)! + y.bandwidth() / 2 + 4)
+      .attr('font-size', 12)
+      .text((d) => d.correlation.toFixed(2));
+
+    svg.append('text').attr('class', 'axis-label').attr('x', margin.left + innerWidth / 2).attr('y', height - 12)
+      .attr('text-anchor', 'middle').attr('font-size', 12)
+      .text(`${method === 'spearman' ? 'Spearman' : 'Pearson'} correlation coefficient`);
+  }
+
+  render();
+  return {
+    setMethod(m) { method = m; render(); },
+    resize: render,
+    destroy: () => { container.innerHTML = ''; },
+  };
+}

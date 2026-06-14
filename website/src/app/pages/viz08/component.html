@@ -1,0 +1,13 @@
+<section class="viz-page">
+  <p class="status">{{ loadState.status() }}</p>
+  <div class="controls">
+    @for (f of features; track f) {
+      <button type="button" [class.active]="feature === f" (click)="feature = f; onFeatureChange()">{{ f }}</button>
+    }
+  </div>
+  <div #chart class="chart-container">
+    @if (loadState.loading()) {
+      <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+    }
+  </div>
+</section>

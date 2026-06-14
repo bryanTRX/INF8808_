@@ -1,0 +1,86 @@
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { VizDataService } from '../../core/services/viz-data.service';
+import { createTooltip } from '../../viz-shared/utils/tooltip';
+import { observeResize } from '../../viz-shared/utils/resize';
+import { deferChartInit } from '../../viz-shared/utils/init-chart';
+import { observeTheme } from '../../viz-shared/utils/observe-theme';
+import { createViz05Chart, GENRE_LABELS, MAJOR_GENRES, Viz05Chart, Viz05State } from './chart';
+import { LangService } from '../../core/services/lang.service';
+import { VizLoadState } from '../../core/i18n/viz-load-state';
+
+@Component({
+  selector: 'app-viz05',
+  imports: [FormsModule],
+  templateUrl: './component.html',
+  styleUrl: './component.css',
+})
+export class Viz05Component implements AfterViewInit, OnDestroy {
+  @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
+  readonly genres = MAJOR_GENRES;
+  readonly genreLabels = GENRE_LABELS;
+  selectedGenres = new Set(['pop', 'rock', 'hip-hop', 'electronic', 'dance', 'latin']);
+  sampleSize = 500;
+  sharedScales = true;
+  search = '';
+  readonly loadState = new VizLoadState(() => this.langService.lang());
+
+  readonly langService = inject(LangService);
+  private dataService = inject(VizDataService);
+  private controller?: Viz05Chart;
+  private cleanupResize?: () => void;
+  private cleanupTheme?: () => void;
+  private tip = createTooltip();
+
+  constructor() {
+    effect(() => { const l = this.langService.lang(); this.controller?.setLang(l); });
+  }
+
+  ngAfterViewInit() {
+    this.dataService.loadDataset().subscribe({
+      next: (rows) => {
+        deferChartInit(() => {
+          this.controller = createViz05Chart(this.chartRef.nativeElement, rows, this.tip, this.langService.lang());
+          this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.refresh());
+          this.cleanupTheme = observeTheme(() => this.refresh());
+          this.refresh();
+          this.loadState.setLoaded(rows.length);
+        });
+      },
+      error: () => { this.loadState.setError(); },
+    });
+  }
+
+  isSelected(genre: string) { return this.selectedGenres.has(genre); }
+
+  toggleGenre(genre: string, checked: boolean) {
+    if (checked) this.selectedGenres.add(genre);
+    else this.selectedGenres.delete(genre);
+    this.refresh();
+  }
+
+  reset() {
+    this.selectedGenres = new Set(['pop', 'rock', 'hip-hop', 'electronic', 'dance', 'latin']);
+    this.sampleSize = 500;
+    this.sharedScales = true;
+    this.search = '';
+    this.refresh();
+  }
+
+  refresh() {
+    const state: Viz05State = {
+      selectedGenres: this.selectedGenres as Viz05State['selectedGenres'],
+      sampleSize: this.sampleSize,
+      sharedScales: this.sharedScales,
+      search: this.search.trim(),
+    };
+    this.controller?.update(state);
+  }
+
+  ngOnDestroy() {
+    this.cleanupResize?.();
+    this.cleanupTheme?.();
+    this.controller?.destroy();
+    this.tip.destroy();
+  }
+}

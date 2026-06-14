@@ -1,0 +1,33 @@
+<section class="viz-page">
+  <p class="status">{{ loadState.status() }}</p>
+
+  <div class="answer-card">
+    <p class="answer-headline">{{ answerHeadline }}</p>
+    <p class="answer-body">{{ answerBody }}</p>
+  </div>
+
+  <div class="side-panel stats-row">
+    @for (s of stats; track s.label) {
+      <div class="metric-card">
+        <div class="stat-label">{{ s.label }}</div>
+        <div class="stat-value">{{ s.value }}</div>
+        <div class="stat-hint">{{ s.hint }}</div>
+      </div>
+    }
+  </div>
+
+  <div class="controls">
+    <button type="button" [class.active]="showCounts" (click)="toggleCounts()">Show song counts</button>
+    <button type="button" (click)="resetView()">Reset view</button>
+    <button type="button" (click)="focusRange(3, 5)">3–5 min</button>
+    <button type="button" (click)="focusRange(2, 4)">2–4 min</button>
+    <button type="button" (click)="focusRange(0, 15)">All songs</button>
+  </div>
+
+  <div class="hover-panel" [class.active]="!!hoverHtml" [innerHTML]="hoverHtml || 'Hover a bar to see average popularity for that length range.'"></div>
+  <div #chart class="chart-container">
+    @if (loadState.loading()) {
+      <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+    }
+  </div>
+</section>

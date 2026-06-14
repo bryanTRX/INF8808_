@@ -1,0 +1,17 @@
+<section class="viz-page">
+  <header>
+    <h1>Densité hexagonale 2D</h1>
+    <p class="subtitle">Où se concentrent les 90 000 titres Spotify dans l'espace audio ? Chaque hexagone = densité de titres · Plus c'est foncé, plus c'est dense.</p>
+  </header>
+  <p class="status">{{ loadState.status() }}</p>
+  <div class="controls">
+    @for (p of pairs; track p.xKey; let i = $index) {
+      <button type="button" [class.active]="pairIdx === i" (click)="setPair(i)">{{ p.yLabel }} / {{ p.xLabel }}</button>
+    }
+  </div>
+  <div #chart class="chart-container">
+    @if (loadState.loading()) {
+      <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+    }
+  </div>
+</section>

@@ -1,0 +1,12 @@
+<section class="viz-page">
+  <p class="status">{{ loadState.status() }}</p>
+  <div class="controls">
+    <button type="button" [class.active]="mode === 'energy-loudness'" (click)="setMode('energy-loudness')">Energy / Loudness</button>
+    <button type="button" [class.active]="mode === 'speech-dance'" (click)="setMode('speech-dance')">Speech / Dance</button>
+  </div>
+  <div #chart class="chart-container">
+    @if (loadState.loading()) {
+      <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+    }
+  </div>
+</section>

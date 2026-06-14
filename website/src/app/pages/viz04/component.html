@@ -1,0 +1,16 @@
+<section class="viz-page">
+  <p class="status">{{ loadState.status() }}</p>
+  <div class="controls">
+    <label>Method
+      <select [(ngModel)]="method" (ngModelChange)="onMethodChange()">
+        <option value="pearson">Pearson</option>
+        <option value="spearman">Spearman</option>
+      </select>
+    </label>
+  </div>
+  <div #chart class="chart-container">
+    @if (loadState.loading()) {
+      <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+    }
+  </div>
+</section>

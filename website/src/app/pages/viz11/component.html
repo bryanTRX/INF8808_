@@ -1,0 +1,17 @@
+<section class="viz-page">
+  <header>
+    <h1>Caractéristiques audio moyennes par genre</h1>
+    <p class="subtitle">Quel genre est le plus énergique, le plus dansable, le plus joyeux ? Barres triées du plus élevé au plus bas · Lignes = 1er–3e quartile.</p>
+  </header>
+  <p class="status">{{ loadState.status() }}</p>
+  <div class="controls">
+    @for (f of featureEntries; track f.key) {
+      <button type="button" [class.active]="feature === f.key" (click)="feature = f.key; onFeatureChange()">{{ f.label }}</button>
+    }
+  </div>
+  <div #chart class="chart-container">
+    @if (loadState.loading()) {
+      <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
+    }
+  </div>
+</section>

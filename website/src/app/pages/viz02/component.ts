@@ -1,11 +1,19 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  effect,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
-import { createViz02Chart, Viz02Chart } from './chart';
+import { SortOrder, TopN, createViz02Chart, Viz02Chart } from './chart';
 import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
@@ -17,8 +25,14 @@ import { VizLoadState } from '../../core/i18n/viz-load-state';
 })
 export class Viz02Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
+
   readonly langService = inject(LangService);
   readonly loadState = new VizLoadState(() => this.langService.lang());
+
+  topN: TopN = 50;
+  sortOrder: SortOrder = 'asc';
+
+  readonly topNOptions: TopN[] = [10, 20, 30, 50];
 
   private dataService = inject(VizDataService);
   private controller?: Viz02Chart;
@@ -26,17 +40,47 @@ export class Viz02Component implements AfterViewInit, OnDestroy {
   private cleanupTheme?: () => void;
   private tip = createTooltip();
 
+  constructor() {
+    effect(() => {
+      const lang = this.langService.lang() as 'en' | 'fr';
+      this.controller?.update({ lang });
+    });
+  }
+
+  get lang(): 'en' | 'fr' {
+    return this.langService.lang() as 'en' | 'fr';
+  }
+
+  setTopN(n: TopN) {
+    this.topN = n;
+    this.controller?.update({ topN: n, lang: this.lang });
+  }
+
+  setSortOrder(order: SortOrder) {
+    this.sortOrder = order;
+    this.controller?.update({ sortOrder: order, lang: this.lang });
+  }
+
   ngAfterViewInit() {
     this.dataService.loadDataset().subscribe({
       next: (rows) => {
         deferChartInit(() => {
-          this.controller = createViz02Chart(this.chartRef.nativeElement, rows, this.tip);
-          this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.controller?.resize());
+          this.controller = createViz02Chart(
+            this.chartRef.nativeElement,
+            rows,
+            this.tip,
+            { topN: this.topN, sortOrder: this.sortOrder, lang: this.lang },
+          );
+          this.cleanupResize = observeResize(this.chartRef.nativeElement, () =>
+            this.controller?.resize(),
+          );
           this.cleanupTheme = observeTheme(() => this.controller?.resize());
           this.loadState.setLoaded(rows.length);
         });
       },
-      error: () => { this.loadState.setError(); },
+      error: () => {
+        this.loadState.setError();
+      },
     });
   }
 

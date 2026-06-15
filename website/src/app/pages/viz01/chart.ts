@@ -188,7 +188,7 @@ export function createViz01Chart(
 
     const svgH = Math.max(520, (container.clientHeight || 560));
     const chartH = svgH - legendH - 16;
-    const margin = { top: 72, right: 20, bottom: 28, left: 50 };
+    const margin = { top: 72, right: 48, bottom: 28, left: 50 };
     const innerW = width - margin.left - margin.right;
     const innerH = chartH - margin.top - margin.bottom;
 

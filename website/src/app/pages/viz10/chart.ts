@@ -17,8 +17,6 @@ const RADAR_AXES: { key: string; kind: AxisKind }[] = [
   { key: 'durationMinutes', kind: 'duration' },
 ];
 
-export type TrendMetric = 'durationMinutes' | 'valence' | 'acousticness' | 'loudness' | 'tempo' | 'popularity';
-
 const L = (lang: Lang) => lang === 'fr' ? {
   axes: {
     danceability: 'Dansabilité',
@@ -30,17 +28,10 @@ const L = (lang: Lang) => lang === 'fr' ? {
     popularity: 'Popularité',
     durationMinutes: 'Durée',
   },
-  trendMetrics: [
-    { key: 'durationMinutes' as TrendMetric, label: 'Durée' },
-    { key: 'valence' as TrendMetric, label: 'Valence' },
-    { key: 'acousticness' as TrendMetric, label: 'Acousticité' },
-    { key: 'loudness' as TrendMetric, label: 'Volume' },
-    { key: 'tempo' as TrendMetric, label: 'Tempo' },
-    { key: 'popularity' as TrendMetric, label: 'Popularité' },
-  ],
-  trendTitle: (metric: string) => `Tendance : ${metric} par rang de popularité dans le catalogue`,
-  rankAxis: 'Rang de popularité (1 = le plus populaire)',
-  rankLabel: (rank: number, metric: string, value: string) => `Rang #${rank} · ${metric} : ${value}`,
+  comparisonTitle: 'Comparaison des profils audio',
+  tracks: 'titres',
+  clickHint: 'Cliquez sur un artiste pour l\'ajouter ou le retirer de la comparaison.',
+  norm: 'norm',
 } : {
   axes: {
     danceability: 'Danceability',
@@ -52,24 +43,11 @@ const L = (lang: Lang) => lang === 'fr' ? {
     popularity: 'Popularity',
     durationMinutes: 'Duration',
   },
-  trendMetrics: [
-    { key: 'durationMinutes' as TrendMetric, label: 'Duration' },
-    { key: 'valence' as TrendMetric, label: 'Valence' },
-    { key: 'acousticness' as TrendMetric, label: 'Acousticness' },
-    { key: 'loudness' as TrendMetric, label: 'Loudness' },
-    { key: 'tempo' as TrendMetric, label: 'Tempo' },
-    { key: 'popularity' as TrendMetric, label: 'Popularity' },
-  ],
-  trendTitle: (metric: string) => `Trend: ${metric} by popularity rank within catalog`,
-  rankAxis: 'Popularity rank (1 = most popular)',
-  rankLabel: (rank: number, metric: string, value: string) => `Rank #${rank} · ${metric}: ${value}`,
+  comparisonTitle: 'Audio Profile Comparison',
+  tracks: 'tracks',
+  clickHint: 'Click an artist to add or remove them from the comparison.',
+  norm: 'norm',
 };
-
-export const TREND_METRICS = L('en').trendMetrics;
-
-export function getTrendMetrics(lang: Lang) {
-  return L(lang).trendMetrics;
-}
 
 interface ParsedTrack {
   id: string;
@@ -88,10 +66,10 @@ interface ParsedTrack {
 
 export interface Performer { rank: number; name: string }
 
-export interface Viz10State {
-  selectedArtists: Set<string>;
-  trendMetric: TrendMetric;
-  search: string;
+export interface Viz10Chart {
+  setLang: (l: Lang) => void;
+  resize: () => void;
+  destroy: () => void;
 }
 
 function clamp01(v: number) { return Math.max(0, Math.min(1, v)); }
@@ -156,16 +134,8 @@ function formatRaw(key: string, value: number) {
 
 const ARTIST_COLORS = d3.scaleOrdinal(d3.schemeTableau10);
 
-export interface Viz10Chart {
-  update: (state: Viz10State) => void;
-  setLang: (l: Lang) => void;
-  resize: () => void;
-  destroy: () => void;
-}
-
 export function createViz10Chart(
-  radarContainer: HTMLElement,
-  trendContainer: HTMLElement,
+  container: HTMLElement,
   rows: TrackRow[],
   performers: Performer[],
   tip: VizTooltip,
@@ -175,11 +145,8 @@ export function createViz10Chart(
   const strings = () => L(_lang);
   const tracks = rows.map(parseTrackRow).filter((d): d is ParsedTrack => d !== null);
   const normalize = buildNormalizer(tracks, performers);
-  let state: Viz10State = {
-    selectedArtists: new Set(performers.slice(0, 3).map((p) => p.name)),
-    trendMetric: 'durationMinutes',
-    search: '',
-  };
+  // Default: first 3 artists in comparison
+  const selectedArtists = new Set<string>(performers.slice(0, 3).map((p) => p.name));
 
   function getProfile(name: string) {
     const artistTracks = tracks.filter((t) => normalizeText(t.primaryArtist) === normalizeText(name));
@@ -190,154 +157,212 @@ export function createViz10Chart(
       values[axis.key] = mean;
       normalized[axis.key] = normalize(axis.key, mean);
     });
-    return {
-      name,
-      count: artistTracks.length,
-      values,
-      normalized,
-      meanPopularity: d3.mean(artistTracks, (d) => d.popularity) ?? 0,
-      meanDuration: d3.mean(artistTracks, (d) => d.durationMinutes) ?? 0,
-    };
+    return { name, count: artistTracks.length, values, normalized };
   }
 
-  function renderRadar() {
-    radarContainer.innerHTML = '';
-    const selected = performers.filter((p) => state.selectedArtists.has(p.name));
-    const width = Math.max(320, radarContainer.clientWidth || 480);
-    const height = Math.max(360, radarContainer.clientHeight || 420);
-    const radius = Math.min(width, height) / 2 - 56;
-    const cx = width / 2;
-    const cy = height / 2;
-    const angleSlice = (Math.PI * 2) / RADAR_AXES.length;
-    const levels = [0.25, 0.5, 0.75, 1];
+  function drawRadarShape(
+    g: d3.Selection<SVGGElement, unknown, null, undefined>,
+    profile: ReturnType<typeof getProfile>,
+    radius: number,
+    angleSlice: number,
+    color: string,
+    strokeWidth: number,
+    fillOpacity: number,
+  ) {
+    const points = RADAR_AXES.map((axis, i) => ({
+      angle: i * angleSlice,
+      value: profile.normalized[axis.key],
+      key: axis.key,
+      raw: profile.values[axis.key],
+      axis: axis.key,
+    }));
 
-    const theme = getChartTheme();
-    const svg = d3.select(radarContainer).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
-    const g = svg.append('g').attr('transform', `translate(${cx},${cy})`);
+    const line = d3.lineRadial<{ angle: number; value: number }>()
+      .radius((d) => radius * d.value).angle((d) => d.angle).curve(d3.curveLinearClosed);
 
-    g.selectAll('.grid').data(levels).join('circle')
-      .attr('r', (d) => radius * d).attr('fill', 'none').attr('stroke', theme.border);
-
-    const labels = strings().axes;
-    RADAR_AXES.forEach((axis, i) => {
-      g.append('line')
-        .attr('x1', 0).attr('y1', 0)
-        .attr('x2', radius * Math.sin(i * angleSlice))
-        .attr('y2', -radius * Math.cos(i * angleSlice))
-        .attr('stroke', theme.border);
-      g.append('text')
-        .attr('class', 'axis-label')
-        .attr('x', (radius + 16) * Math.sin(i * angleSlice))
-        .attr('y', -(radius + 12) * Math.cos(i * angleSlice))
-        .attr('text-anchor', 'middle').attr('font-size', 10)
-        .text(labels[axis.key as keyof typeof labels]);
-    });
-
-    selected.forEach((performer, pi) => {
-      const profile = getProfile(performer.name);
-      if (!profile.count) return;
-      const color = ARTIST_COLORS(performer.name);
-      const points = RADAR_AXES.map((axis, i) => ({
-        axis: labels[axis.key as keyof typeof labels],
-        key: axis.key,
-        value: profile.normalized[axis.key],
-        raw: profile.values[axis.key],
-        angle: i * angleSlice,
-        artist: profile.name,
-      }));
-
-      const line = d3.lineRadial<{ angle: number; value: number }>()
-        .radius((d) => radius * d.value).angle((d) => d.angle).curve(d3.curveLinearClosed);
-
-      g.append('path').attr('d', line(points)).attr('fill', color).attr('fill-opacity', 0.12)
-        .attr('stroke', color).attr('stroke-width', 2);
-
-      g.selectAll(`.pt-${pi}`).data(points).join('circle')
-        .attr('cx', (d) => radius * d.value * Math.sin(d.angle))
-        .attr('cy', (d) => -radius * d.value * Math.cos(d.angle))
-        .attr('r', 4).attr('fill', color)
-        .on('mouseover', (event, d) => {
-          tip.show(event, `<div><strong>${d.artist}</strong> · ${d.axis}</div>
-            <div><span class="tooltip-value">${formatRaw(d.key, d.raw)}</span> (norm ${d3.format('.2f')(d.value)})</div>`);
-        })
-        .on('mousemove', (event) => tip.move(event))
-        .on('mouseout', () => tip.hide());
-    });
-  }
-
-  function renderTrend() {
-    trendContainer.innerHTML = '';
-    const selected = performers.filter((p) => state.selectedArtists.has(p.name));
-    const metric = state.trendMetric;
-    const width = Math.max(480, trendContainer.clientWidth || 720);
-    const height = Math.max(320, trendContainer.clientHeight || 360);
-    const margin = { top: 32, right: 24, bottom: 48, left: 56 };
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
-
-    const series = selected.map((p) => {
-      const artistTracks = tracks
-        .filter((t) => normalizeText(t.primaryArtist) === normalizeText(p.name))
-        .sort((a, b) => d3.descending(a.popularity, b.popularity))
-        .map((t, i) => ({
-          rank: i + 1,
-          value: t[metric as keyof ParsedTrack] as number,
-          trackName: t.trackName,
-          artist: p.name,
-        }));
-      return { name: p.name, points: artistTracks };
-    }).filter((s) => s.points.length);
-
-    const maxRank = d3.max(series, (s) => d3.max(s.points, (d) => d.rank)) || 1;
-    const yExtent = d3.extent(series.flatMap((s) => s.points), (d) => d.value) as [number, number];
-
-    const x = d3.scaleLinear().domain([1, maxRank]).range([0, innerWidth]);
-    const y = d3.scaleLinear().domain(yExtent).nice().range([innerHeight, 0]);
-
-    const svg = d3.select(trendContainer).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
-    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
-
-    const metricLabel = strings().trendMetrics.find((m) => m.key === metric)?.label || metric;
-    g.append('text').attr('class', 'chart-title').attr('y', -12)
-      .text(strings().trendTitle(metricLabel));
-
-    g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerHeight})`).call(d3.axisBottom(x).ticks(8));
-    g.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6));
-    g.append('text').attr('class', 'axis-label').attr('x', innerWidth / 2).attr('y', innerHeight + 36)
-      .attr('text-anchor', 'middle').text(strings().rankAxis);
-    g.append('text').attr('class', 'axis-label').attr('transform', 'rotate(-90)')
-      .attr('x', -innerHeight / 2).attr('y', -42).attr('text-anchor', 'middle').text(metricLabel);
-
-    series.forEach((s) => {
-      const color = ARTIST_COLORS(s.name);
-      g.append('path')
-        .datum(s.points)
-        .attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2)
-        .attr('d', d3.line<{ rank: number; value: number }>().x((d) => x(d.rank)).y((d) => y(d.value)));
-
-      g.selectAll(null).data(s.points).join('circle')
-        .attr('cx', (d) => x(d.rank)).attr('cy', (d) => y(d.value))
-        .attr('r', 3).attr('fill', color)
-        .on('mouseover', (event, d) => {
-          tip.show(event, `<div><strong>${d.artist}</strong></div>
-            <div>${d.trackName}</div>
-            <div>${strings().rankLabel(d.rank, metricLabel, formatRaw(metric, d.value))}</div>`);
-        })
-        .on('mousemove', (event) => tip.move(event))
-        .on('mouseout', () => tip.hide());
-    });
+    g.append('path').attr('d', line(points))
+      .attr('fill', color).attr('fill-opacity', fillOpacity)
+      .attr('stroke', color).attr('stroke-width', strokeWidth);
+    return points;
   }
 
   function render() {
-    renderRadar();
-    renderTrend();
+    container.innerHTML = '';
+    const theme = getChartTheme();
+    const lbl = strings();
+
+    // ── Click hint ──────────────────────────────────────────────────────────
+    d3.select(container).append('p')
+      .style('font-size', '0.78rem').style('color', 'var(--muted)')
+      .style('margin', '0 0 0.75rem').text(lbl.clickHint);
+
+    // ── Mini-radar grid ─────────────────────────────────────────────────────
+    const grid = d3.select(container).append('div')
+      .style('display', 'grid')
+      .style('grid-template-columns', 'repeat(auto-fill, minmax(160px, 1fr))')
+      .style('gap', '10px')
+      .style('margin-bottom', '1.5rem');
+
+    performers.forEach((performer) => {
+      const isSelected = selectedArtists.has(performer.name);
+      const color = ARTIST_COLORS(performer.name);
+      const profile = getProfile(performer.name);
+
+      const card = grid.append('div')
+        .style('border', `2px solid ${isSelected ? color : 'var(--border)'}`)
+        .style('border-radius', 'var(--radius-md)')
+        .style('padding', '8px 8px 6px')
+        .style('cursor', 'pointer')
+        .style('background', isSelected ? `${color}18` : 'var(--panel)')
+        .style('transition', 'border-color 0.15s, background 0.15s')
+        .on('click', () => {
+          if (selectedArtists.has(performer.name)) {
+            if (selectedArtists.size > 1) selectedArtists.delete(performer.name);
+          } else {
+            selectedArtists.add(performer.name);
+          }
+          render();
+        })
+        .on('mouseenter', function (event) {
+          const rows = RADAR_AXES.map((a) =>
+            `<div style="display:flex;justify-content:space-between;gap:1.2rem;line-height:1.8">
+              <span style="color:var(--muted)">${lbl.axes[a.key as keyof typeof lbl.axes]}</span>
+              <span class="tooltip-value">${formatRaw(a.key, profile.values[a.key])}</span>
+            </div>`,
+          ).join('');
+          tip.show(event,
+            `<div style="margin-bottom:0.4rem;display:flex;align-items:center;gap:0.5rem">
+              <span style="width:10px;height:10px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span>
+              <strong>${performer.name}</strong>
+            </div>
+            <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.4rem">${profile.count} ${lbl.tracks}</div>
+            <div style="border-top:1px solid var(--border);padding-top:0.35rem;font-size:0.81rem">${rows}</div>`);
+        })
+        .on('mousemove', (event) => tip.move(event))
+        .on('mouseleave', () => tip.hide());
+
+      // Mini SVG radar
+      const size = 140;
+      const r = size / 2 - 18;
+      const cx = size / 2, cy = size / 2;
+      const aSlice = (Math.PI * 2) / RADAR_AXES.length;
+
+      const svg = card.append('svg')
+        .attr('width', size).attr('height', size)
+        .attr('viewBox', `0 0 ${size} ${size}`)
+        .style('display', 'block').style('margin', '0 auto');
+      const g = svg.append('g').attr('transform', `translate(${cx},${cy})`);
+
+      // Grid circles
+      [0.25, 0.5, 0.75, 1].forEach((lvl) => {
+        g.append('circle').attr('r', r * lvl).attr('fill', 'none').attr('stroke', theme.border).attr('stroke-width', 0.5);
+      });
+      // Axis lines
+      RADAR_AXES.forEach((_, i) => {
+        g.append('line')
+          .attr('x1', 0).attr('y1', 0)
+          .attr('x2', r * Math.sin(i * aSlice))
+          .attr('y2', -r * Math.cos(i * aSlice))
+          .attr('stroke', theme.border).attr('stroke-width', 0.5);
+      });
+
+      drawRadarShape(g, profile, r, aSlice, color, 1.5, 0.2);
+
+      // Artist name
+      card.append('div')
+        .style('text-align', 'center')
+        .style('font-size', '0.7rem')
+        .style('font-weight', '700')
+        .style('color', isSelected ? color : 'var(--muted)')
+        .style('margin-top', '2px')
+        .style('white-space', 'nowrap')
+        .style('overflow', 'hidden')
+        .style('text-overflow', 'ellipsis')
+        .text(`${performer.rank}. ${performer.name}`);
+    });
+
+    // ── Comparison radar ────────────────────────────────────────────────────
+    const selected = performers.filter((p) => selectedArtists.has(p.name));
+    const compSection = d3.select(container).append('div')
+      .style('border', '1px solid var(--border)').style('border-radius', 'var(--radius-lg)')
+      .style('background', 'var(--panel)').style('padding', '1rem');
+
+    compSection.append('p')
+      .style('margin', '0 0 0.5rem')
+      .style('font-size', '0.85rem').style('font-weight', '600').style('color', 'var(--text-secondary)')
+      .text(lbl.comparisonTitle);
+
+    const compDiv = compSection.append('div').node()!;
+    const cW = Math.max(400, container.clientWidth - 40 || 700);
+    const cH = 420;
+    const cRadius = Math.min(cW, cH) / 2 - 80;
+    const cCx = cW / 2, cCy = cH / 2;
+    const aSliceBig = (Math.PI * 2) / RADAR_AXES.length;
+
+    const svg = d3.select(compDiv).append('svg')
+      .attr('width', cW).attr('height', cH).attr('viewBox', `0 0 ${cW} ${cH}`);
+    const g = svg.append('g').attr('transform', `translate(${cCx},${cCy})`);
+
+    // Grid
+    [0.25, 0.5, 0.75, 1].forEach((lvl) => {
+      g.append('circle').attr('r', cRadius * lvl).attr('fill', 'none')
+        .attr('stroke', theme.border).attr('stroke-width', lvl === 1 ? 1 : 0.5);
+    });
+
+    // Axes + labels
+    const axisLabels = strings().axes;
+    RADAR_AXES.forEach((axis, i) => {
+      const ax = cRadius * Math.sin(i * aSliceBig);
+      const ay = -cRadius * Math.cos(i * aSliceBig);
+      g.append('line').attr('x1', 0).attr('y1', 0).attr('x2', ax).attr('y2', ay)
+        .attr('stroke', theme.border);
+      const labelR = cRadius + 22;
+      g.append('text').attr('class', 'axis-label')
+        .attr('x', labelR * Math.sin(i * aSliceBig))
+        .attr('y', -labelR * Math.cos(i * aSliceBig))
+        .attr('text-anchor', 'middle').attr('font-size', 11)
+        .text(axisLabels[axis.key as keyof typeof axisLabels]);
+    });
+
+    // Artist overlays
+    selected.forEach((performer) => {
+      const profile = getProfile(performer.name);
+      if (!profile.count) return;
+      const color = ARTIST_COLORS(performer.name);
+      const pts = drawRadarShape(g, profile, cRadius, aSliceBig, color, 2, 0.12);
+
+      // Dots with tooltip
+      g.selectAll(null).data(pts).join('circle')
+        .attr('cx', (d) => cRadius * d.value * Math.sin(d.angle))
+        .attr('cy', (d) => -cRadius * d.value * Math.cos(d.angle))
+        .attr('r', 4).attr('fill', color)
+        .on('mouseover', (event, d) => {
+          tip.show(event,
+            `<div style="margin-bottom:0.3rem"><strong>${performer.name}</strong> · ${axisLabels[d.axis as keyof typeof axisLabels]}</div>
+            <div><span class="tooltip-value">${formatRaw(d.key, d.raw)}</span>
+            <span style="color:var(--muted);font-size:0.78rem"> (${lbl.norm} ${d3.format('.2f')(d.value)})</span></div>`);
+        })
+        .on('mousemove', (event) => tip.move(event))
+        .on('mouseout', () => tip.hide());
+    });
+
+    // Legend
+    if (selected.length) {
+      const legStartY = -cRadius - 10;
+      const legG = g.append('g').attr('transform', `translate(${cRadius - 10},${legStartY})`);
+      selected.forEach((p, i) => {
+        const row = legG.append('g').attr('transform', `translate(0,${i * 18})`);
+        row.append('circle').attr('r', 5).attr('cx', 0).attr('cy', 4).attr('fill', ARTIST_COLORS(p.name));
+        row.append('text').attr('x', 12).attr('y', 9).attr('font-size', 10)
+          .attr('fill', theme.text).text(p.name);
+      });
+    }
   }
 
   render();
   return {
-    update(s) { state = s; render(); },
     setLang(l) { _lang = l; render(); },
     resize: render,
-    destroy: () => { radarContainer.innerHTML = ''; trendContainer.innerHTML = ''; },
+    destroy: () => { container.innerHTML = ''; },
   };
 }

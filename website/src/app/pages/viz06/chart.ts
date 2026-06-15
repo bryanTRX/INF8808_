@@ -26,8 +26,7 @@ const L = (lang: Lang) => lang === 'fr' ? {
 
 interface ParsedTrack { trackId: string; artists: string; trackName: string; acousticness: number; popularity: number; genre: 'pop' | 'rock'; trackGenre: string }
 
-export interface Viz06State { sampleSize: number; sharedScales: boolean; search: string }
-export interface Viz06Chart { update: (s: Viz06State) => void; setLang: (l: Lang) => void; resize: () => void; destroy: () => void }
+export interface Viz06Chart { setLang: (l: Lang) => void; resize: () => void; destroy: () => void }
 
 function classifyPopRock(raw: unknown): 'pop' | 'rock' | null {
   const tokens = String(raw || '').toLowerCase().split(';').map((t) => t.trim()).filter(Boolean);
@@ -60,7 +59,7 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
     return { trackId: String(r.track_id || ''), artists: String(r.artists || ''), trackName: String(r.track_name || ''), acousticness: a, popularity: p, genre, trackGenre: String(r.track_genre || '') };
   }).filter((d): d is ParsedTrack => d !== null);
   const byGenre = { pop: tracks.filter((t) => t.genre === 'pop'), rock: tracks.filter((t) => t.genre === 'rock') };
-  let state: Viz06State = { sampleSize: 700, sharedScales: true, search: '' };
+  const SAMPLE_SIZE = 700;
 
   function render() {
     container.innerHTML = '';
@@ -73,17 +72,14 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
     const height = fH + 8;
     const m = { top: 50, right: 24, bottom: 56, left: 60 };
     const allV = facets.flatMap(([, v]) => v);
-    const xDom = state.sharedScales ? ([0, 1] as [number, number]) : null;
-    const yDom = state.sharedScales
-      ? ([0, d3.max(allV, (d) => d.popularity) || 100] as [number, number])
-      : null;
-    const srch = state.search.toLowerCase();
+    const xDom: [number, number] = [0, 1];
+    const yDom: [number, number] = [0, d3.max(allV, (d) => d.popularity) || 100];
     const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
 
     facets.forEach(([meta, values], idx) => {
       const iW = fW - m.left - m.right;
       const iH = fH - m.top - m.bottom;
-      const pts = sample(values, state.sampleSize);
+      const pts = sample(values, SAMPLE_SIZE);
       const xSc = d3
         .scaleLinear()
         .domain(xDom ?? (d3.extent(values, (d) => d.acousticness) as [number, number]))
@@ -137,9 +133,6 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
       facet.append('text').attr('class', 'axis-label').attr('x', iW / 2).attr('y', iH + 46).attr('text-anchor', 'middle').text(lbl.axisX);
 
       // Points
-      const matches = (d: ParsedTrack) =>
-        !!srch && `${d.trackName} ${d.artists}`.toLowerCase().includes(srch);
-
       facet
         .selectAll<SVGCircleElement, ParsedTrack>('.point')
         .data(pts, (d) => d.trackId)
@@ -147,9 +140,9 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
         .attr('class', 'point')
         .attr('cx', (d) => xSc(d.acousticness))
         .attr('cy', (d) => ySc(d.popularity))
-        .attr('r', (d) => (matches(d) ? 5 : 2.8))
+        .attr('r', 2.8)
         .attr('fill', meta.color)
-        .attr('opacity', (d) => (srch ? (matches(d) ? 0.95 : 0.07) : 0.42))
+        .attr('opacity', 0.42)
         .on('mouseenter', function (event, d) {
           d3.select(this).attr('r', 6).attr('opacity', 1);
           const acousticLabel =
@@ -177,10 +170,8 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
           );
         })
         .on('mousemove', (event) => tip.move(event))
-        .on('mouseleave', function (_, d) {
-          d3.select(this)
-            .attr('r', matches(d) ? 5 : 2.8)
-            .attr('opacity', srch ? (matches(d) ? 0.95 : 0.07) : 0.42);
+        .on('mouseleave', function () {
+          d3.select(this).attr('r', 2.8).attr('opacity', 0.42);
           tip.hide();
         });
 
@@ -231,19 +222,5 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
   }
 
   render();
-  return { update(s) { state = s; render(); }, setLang(l) { _lang = l; render(); }, resize: render, destroy: () => { container.innerHTML = ''; } };
-}
-
-export function getViz06Stats(rows: TrackRow[]) {
-  const tracks = rows.map((r): ParsedTrack | null => {
-    const a = Number(r.acousticness), p = Number(r.popularity);
-    if (!Number.isFinite(a) || !Number.isFinite(p)) return null;
-    const genre = classifyPopRock(r.track_genre); if (!genre) return null;
-    return { trackId: '', artists: String(r.artists || ''), trackName: String(r.track_name || ''), acousticness: a, popularity: p, genre, trackGenre: String(r.track_genre || '') };
-  }).filter((d): d is ParsedTrack => d !== null);
-  return GENRES.map((g) => {
-    const values = tracks.filter((t) => t.genre === g.id);
-    const fit = linReg(values); const low = values.filter((d) => d.acousticness < 0.33); const high = values.filter((d) => d.acousticness > 0.66);
-    return { ...g, count: values.length, fit, meanPopLow: d3.mean(low, (d) => d.popularity), meanPopHigh: d3.mean(high, (d) => d.popularity) };
-  });
+  return { setLang(l: Lang) { _lang = l; render(); }, resize: render, destroy: () => { container.innerHTML = ''; } };
 }

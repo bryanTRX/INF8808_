@@ -22,28 +22,7 @@
     </div>
   }
 
-  <!-- Controls -->
-  <div class="controls" style="flex-wrap:wrap;gap:0.5rem 0.75rem;align-items:center">
-
-    <label class="chip-label" style="cursor:pointer">
-      <input type="checkbox" [checked]="showCounts" (change)="toggleCounts()" style="display:none">
-      {{ langService.lang() === 'fr' ? 'Afficher les comptes' : 'Show song counts' }}
-    </label>
-
-    <button type="button" (click)="reset()">
-      {{ langService.lang() === 'fr' ? 'Réinitialiser' : 'Reset' }}
-    </button>
-
-  </div>
-
-  <!-- Hover info panel -->
-  <div class="hover-panel" [class.active]="!!hoverHtml"
-    [innerHTML]="hoverHtml || (langService.lang() === 'fr'
-      ? 'Survolez une barre pour voir la popularité moyenne pour cette durée.'
-      : 'Hover a bar to see average popularity for that length range.')">
-  </div>
-
-  <div #chart class="chart-container">
+  <div #chart class="chart-container" style="min-height:480px">
     @if (loadState.loading()) {
       <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
     }

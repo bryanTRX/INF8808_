@@ -8,7 +8,7 @@
       {{ modeLabels()['speech-dance'] }}
     </button>
   </div>
-  <div #chart class="chart-container">
+  <div #chart class="chart-container" style="min-height:560px">
     @if (loadState.loading()) {
       <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
     }

@@ -201,7 +201,7 @@ export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: 
 
     const width = Math.max(640, container.clientWidth || 900);
     const height = Math.max(420, container.clientHeight || 480);
-    const margin = { top: 48, right: 140, bottom: 48, left: 56 };
+    const margin = { top: 48, right: 175, bottom: 48, left: 56 };
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 

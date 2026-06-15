@@ -51,9 +51,6 @@ export interface Viz07Meta {
   bin_width_minutes: number;
 }
 
-export interface Viz07State {
-  showCounts: boolean;
-}
 
 function computeBins(rows: TrackRow[]): { bins: DurationBin[]; meta: Viz07Meta } {
   const BIN_WIDTH = 0.5; // 30 seconds
@@ -111,48 +108,41 @@ function formatDuration(min: number) {
 }
 
 export interface Viz07Chart {
-  update: (state: Viz07State) => void;
   setLang: (lang: Lang) => void;
-  onHover: (html: string | null) => void;
   resize: () => void;
   destroy: () => void;
   getMeta: () => Viz07Meta;
   getFullBins: () => DurationBin[];
-  getDefaultHoverText: () => string;
 }
 
 export function createViz07Chart(
   container: HTMLElement,
   rows: TrackRow[],
   tip: VizTooltip,
-  onHover: (html: string | null) => void,
   initLang: Lang = 'fr',
 ): Viz07Chart {
   const { bins: fullData, meta } = computeBins(rows);
   let _lang: Lang = initLang;
-  let state: Viz07State = { showCounts: true };
   let hoveredBin: number | null = null;
+  const MAX_BINS = 20;
 
   // Fixed layout constants
   const margin = { top: 28, right: 32, bottom: 52, left: 58 };
-  const plotHeight = 300;
-  const countGap = 14;
-  const countPlotHeight = 52;
+  const plotHeight = 380;
   // Each bin gets a fixed pixel width so all bins are always visible via scroll
-  const BAR_SPACING = 30;
-  const BAR_W = 18;
+  const BAR_SPACING = 44;
+  const BAR_W = 28;
 
   function render() {
     container.innerHTML = '';
     const lbl = L(_lang);
     const theme = getChartTheme();
-    const data = fullData;
+    const data = fullData.slice(0, MAX_BINS);
 
     const innerWidth = data.length * BAR_SPACING;
     const innerHeight = plotHeight;
     const svgWidth = innerWidth + margin.left + margin.right;
-    const mainSvgHeight = margin.top + plotHeight + margin.bottom;
-    const totalSvgHeight = mainSvgHeight + (state.showCounts ? countGap + countPlotHeight : 0);
+    const totalSvgHeight = margin.top + plotHeight + margin.bottom;
 
     const y = d3.scaleLinear()
       .domain([
@@ -167,10 +157,6 @@ export function createViz07Chart(
         data[data.length - 1].avg_duration + meta.bin_width_minutes / 2,
       ])
       .range([0, innerWidth]);
-
-    const yCount = d3.scaleLinear()
-      .domain([0, (d3.max(data, (d) => d.count) ?? 1) * 1.1])
-      .range([countPlotHeight, 0]);
 
     const overallAvg = d3.mean(data, (d) => d.avg_popularity) ?? 0;
 
@@ -262,13 +248,6 @@ export function createViz07Chart(
           .findIndex((b) => b.bin_start === d.bin_start) + 1;
         const binEnd = d.bin_start + meta.bin_width_minutes;
         const range = `${formatDuration(d.bin_start)} – ${formatDuration(binEnd)}`;
-        onHover(
-          `<strong>${range}</strong> &nbsp;·&nbsp; ` +
-          `${lbl.rank} #${rank} ${lbl.of} ${data.length} &nbsp;·&nbsp; ` +
-          `${d.count.toLocaleString()} ${lbl.songs}<br>` +
-          `${lbl.avg} <strong>${d.avg_popularity.toFixed(1)}</strong> &nbsp;·&nbsp; ` +
-          `${lbl.median} <strong>${d.median_popularity.toFixed(1)}</strong>`,
-        );
         tip.show(
           event,
           `<div style="margin-bottom:0.35rem">
@@ -298,33 +277,17 @@ export function createViz07Chart(
       .on('mouseleave', () => {
         hoveredBin = null;
         barsLayer.selectAll('.bar').classed('is-hovered', false);
-        onHover(null);
         tip.hide();
       });
 
-    // Mini count bars
-    if (state.showCounts) {
-      const gCounts = svg.append('g')
-        .attr('transform', `translate(${margin.left},${mainSvgHeight + countGap})`);
-      gCounts.selectAll('.count-bar').data(data, (d) => (d as DurationBin).bin_start).join('rect')
-        .attr('class', 'count-bar').attr('fill', theme.muted).attr('opacity', 0.45)
-        .attr('x', (d) => x(d.avg_duration) - BAR_W / 2)
-        .attr('y', (d) => yCount(d.count))
-        .attr('width', BAR_W)
-        .attr('height', (d) => Math.max(0, countPlotHeight - yCount(d.count)))
-        .attr('rx', 2);
-    }
   }
 
   render();
   return {
-    update(s) { state = s; render(); },
     setLang(l) { _lang = l; render(); },
-    onHover,
     resize: render,
     destroy: () => { container.innerHTML = ''; },
     getMeta: () => meta,
     getFullBins: () => fullData,
-    getDefaultHoverText: () => L(_lang).hoverDefault,
   };
 }

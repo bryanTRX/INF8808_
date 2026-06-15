@@ -267,11 +267,6 @@ export function createViz02Chart(
       .attr('stroke', theme.muted).attr('stroke-dasharray', '6,4')
       .attr('stroke-width', 1.5).attr('stroke-linecap', 'round');
 
-    g.append('text')
-      .attr('x', 6).attr('y', y(popMedian) - 5)
-      .attr('fill', theme.muted).attr('class', 'axis-label')
-      .style('font-size', '10px').style('font-weight', '600')
-      .text(lang === 'fr' ? 'Médiane pop' : 'Pop median');
 
     // ── Boxes ────────────────────────────────────────────────────────────────
     const boxG = g.selectAll<SVGGElement, BoxDatum>('.box-col')

@@ -109,9 +109,9 @@ export function createViz09Chart(container: HTMLElement, rows: TrackRow[], tip: 
     const maxCount = d3.max(cells, (d) => d.count) || 1;
 
     const width = Math.max(640, container.clientWidth || 900);
-    const height = Math.max(480, container.clientHeight || 560);
-    const margin = { top: 56, right: 100, bottom: 56, left: 64 };
-    const topMarg = 48;
+    const height = Math.max(520, container.clientHeight || 600);
+    const margin = { top: 80, right: 150, bottom: 56, left: 64 };
+    const topMarg = 40;
     const rightMarg = 48;
     const innerWidth = width - margin.left - margin.right - rightMarg;
     const innerHeight = height - margin.top - margin.bottom - topMarg;
@@ -121,9 +121,10 @@ export function createViz09Chart(container: HTMLElement, rows: TrackRow[], tip: 
     const color = d3.scaleSequential(cfg.color).domain([0, maxCount]);
 
     const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
-    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top + topMarg})`);
 
-    g.append('text').attr('class', 'chart-title').attr('x', 0).attr('y', -topMarg + 16).text(cfg.title);
+    svg.append('text').attr('class', 'chart-title').attr('x', margin.left).attr('y', 28).text(cfg.title);
+
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top + topMarg})`);
 
     g.selectAll('.heat-cell').data(cells).join('rect')
       .attr('x', (d) => x(d.x0))

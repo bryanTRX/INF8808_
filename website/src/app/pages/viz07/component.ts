@@ -1,5 +1,4 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
@@ -11,14 +10,12 @@ import { createViz07Chart, Viz07Chart } from './chart';
 
 @Component({
   selector: 'app-viz07',
-  imports: [FormsModule],
+  imports: [],
   templateUrl: './component.html',
   styleUrl: './component.css',
 })
 export class Viz07Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
-  showCounts = true;
-  hoverHtml: string | null = null;
   readonly langService = inject(LangService);
   readonly loadState = new VizLoadState(() => this.langService.lang(), 'ready');
 
@@ -45,8 +42,6 @@ export class Viz07Component implements AfterViewInit, OnDestroy {
       : `Overall average popularity is ${this._overallAvg.toFixed(1)}/100. Correlation r = ${this._meta.correlation}.`;
   });
 
-  readonly defaultHoverText = computed(() => this._controller?.getDefaultHoverText() ?? '');
-
   private _meta: { tracks_in_view: number; correlation: number; bin_width_minutes: number } | null = null;
   private _overallAvg: number | null = null;
   private _controller: Viz07Chart | undefined;
@@ -64,8 +59,6 @@ export class Viz07Component implements AfterViewInit, OnDestroy {
     });
   }
 
-  get controller() { return this._controller; }
-
   ngAfterViewInit() {
     this.dataService.loadDataset().subscribe({
       next: (rows) => {
@@ -74,7 +67,6 @@ export class Viz07Component implements AfterViewInit, OnDestroy {
             this.chartRef.nativeElement,
             rows,
             this.tip,
-            (html) => { this.hoverHtml = html; },
             this.langService.lang(),
           );
           this.updateSummary();
@@ -109,17 +101,6 @@ export class Viz07Component implements AfterViewInit, OnDestroy {
           { label: 'Correlation', value: String(this._meta.correlation), hint: 'Duration and popularity' },
           { label: 'Bin size', value: '30 sec', hint: 'Each bar width' },
         ];
-  }
-
-  toggleCounts() {
-    this.showCounts = !this.showCounts;
-    this._controller?.update({ showCounts: this.showCounts });
-  }
-
-  reset() {
-    this.showCounts = true;
-    this.hoverHtml = null;
-    this._controller?.update({ showCounts: this.showCounts });
   }
 
   ngOnDestroy() {

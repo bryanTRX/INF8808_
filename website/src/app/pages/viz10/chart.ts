@@ -295,8 +295,11 @@ export function createViz10Chart(
     const compDiv = compSection.append('div').node()!;
     const cW = Math.max(400, container.clientWidth - 40 || 700);
     const cH = 420;
-    const cRadius = Math.min(cW, cH) / 2 - 80;
-    const cCx = cW / 2, cCy = cH / 2;
+    const legendW = 160; // reserved strip on the right for the legend
+    const radarAreaW = cW - legendW;
+    const cRadius = Math.min(radarAreaW, cH) / 2 - 72;
+    const cCx = radarAreaW / 2;   // center radar within the left area
+    const cCy = cH / 2;
     const aSliceBig = (Math.PI * 2) / RADAR_AXES.length;
 
     const svg = d3.select(compDiv).append('svg')
@@ -346,14 +349,15 @@ export function createViz10Chart(
         .on('mouseout', () => tip.hide());
     });
 
-    // Legend
+    // Legend — anchored inside the reserved right strip, vertically centred
     if (selected.length) {
-      const legStartY = -cRadius - 10;
-      const legG = g.append('g').attr('transform', `translate(${cRadius - 10},${legStartY})`);
+      const legX = cW - legendW + 16;
+      const legY = cCy - (selected.length * 20) / 2;
+      const legG = svg.append('g').attr('transform', `translate(${legX},${legY})`);
       selected.forEach((p, i) => {
-        const row = legG.append('g').attr('transform', `translate(0,${i * 18})`);
+        const row = legG.append('g').attr('transform', `translate(0,${i * 20})`);
         row.append('circle').attr('r', 5).attr('cx', 0).attr('cy', 4).attr('fill', ARTIST_COLORS(p.name));
-        row.append('text').attr('x', 12).attr('y', 9).attr('font-size', 10)
+        row.append('text').attr('x', 13).attr('y', 9).attr('font-size', 11)
           .attr('fill', theme.text).text(p.name);
       });
     }

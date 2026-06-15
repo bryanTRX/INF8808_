@@ -21,41 +21,41 @@ const FEATURE_CONFIG_EN: FeatureConfig = {
   valence: {
     title: 'Valence Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'low', label: 'Sad/Angry (Low)', color: '#636EFA', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Neutral (Medium)', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Happy/Upbeat (High)', color: '#EF553B', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Sad/Angry (Low)', color: '#f4a582', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Neutral (Medium)', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Happy/Upbeat (High)', color: '#8b1a0e', classify: (v) => v > 0.66 },
     ],
   },
   instrumentalness: {
     title: 'Instrumentalness Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'vocal', label: 'Mostly Vocal', color: '#636EFA', classify: (v) => v <= 0.1 },
-      { key: 'mixed', label: 'Mixed', color: '#BEC1D4', classify: (v) => v > 0.1 && v <= 0.8 },
-      { key: 'inst', label: 'Instrumental', color: '#EF553B', classify: (v) => v > 0.8 },
+      { key: 'vocal', label: 'Mostly Vocal', color: '#f4a582', classify: (v) => v <= 0.1 },
+      { key: 'mixed', label: 'Mixed', color: '#d6604d', classify: (v) => v > 0.1 && v <= 0.8 },
+      { key: 'inst', label: 'Instrumental', color: '#8b1a0e', classify: (v) => v > 0.8 },
     ],
   },
   speechiness: {
     title: 'Speechiness Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'low', label: 'Low Speech', color: '#636EFA', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Medium Speech', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'High Speech', color: '#EF553B', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Low Speech', color: '#f4a582', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Medium Speech', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'High Speech', color: '#8b1a0e', classify: (v) => v > 0.66 },
     ],
   },
   danceability: {
     title: 'Danceability Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'low', label: 'Low Dance', color: '#636EFA', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Medium Dance', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'High Dance', color: '#EF553B', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Low Dance', color: '#f4a582', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Medium Dance', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'High Dance', color: '#8b1a0e', classify: (v) => v > 0.66 },
     ],
   },
   energy: {
     title: 'Energy Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'low', label: 'Low Energy', color: '#636EFA', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Medium Energy', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'High Energy', color: '#EF553B', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Low Energy', color: '#f4a582', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Medium Energy', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'High Energy', color: '#8b1a0e', classify: (v) => v > 0.66 },
     ],
   },
 };
@@ -64,41 +64,41 @@ const FEATURE_CONFIG_FR: FeatureConfig = {
   valence: {
     title: 'Répartition de la valence par niveau de popularité',
     categories: [
-      { key: 'low', label: 'Triste/Négatif (Bas)', color: '#636EFA', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Neutre (Moyen)', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Joyeux/Positif (Haut)', color: '#EF553B', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Triste/Négatif (Bas)', color: '#f4a582', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Neutre (Moyen)', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Joyeux/Positif (Haut)', color: '#8b1a0e', classify: (v) => v > 0.66 },
     ],
   },
   instrumentalness: {
     title: 'Répartition de l\'instrumental par niveau de popularité',
     categories: [
-      { key: 'vocal', label: 'Très vocal', color: '#636EFA', classify: (v) => v <= 0.1 },
-      { key: 'mixed', label: 'Mixte', color: '#BEC1D4', classify: (v) => v > 0.1 && v <= 0.8 },
-      { key: 'inst', label: 'Instrumental', color: '#EF553B', classify: (v) => v > 0.8 },
+      { key: 'vocal', label: 'Très vocal', color: '#f4a582', classify: (v) => v <= 0.1 },
+      { key: 'mixed', label: 'Mixte', color: '#d6604d', classify: (v) => v > 0.1 && v <= 0.8 },
+      { key: 'inst', label: 'Instrumental', color: '#8b1a0e', classify: (v) => v > 0.8 },
     ],
   },
   speechiness: {
     title: 'Répartition de la parole par niveau de popularité',
     categories: [
-      { key: 'low', label: 'Peu de parole', color: '#636EFA', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Parole modérée', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Très parlé', color: '#EF553B', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Peu de parole', color: '#f4a582', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Parole modérée', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Très parlé', color: '#8b1a0e', classify: (v) => v > 0.66 },
     ],
   },
   danceability: {
     title: 'Répartition de la dansabilité par niveau de popularité',
     categories: [
-      { key: 'low', label: 'Peu dansable', color: '#636EFA', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Moyennement dansable', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Très dansable', color: '#EF553B', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Peu dansable', color: '#f4a582', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Moyennement dansable', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Très dansable', color: '#8b1a0e', classify: (v) => v > 0.66 },
     ],
   },
   energy: {
     title: 'Répartition de l\'énergie par niveau de popularité',
     categories: [
-      { key: 'low', label: 'Faible énergie', color: '#636EFA', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Énergie modérée', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Haute énergie', color: '#EF553B', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Faible énergie', color: '#f4a582', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Énergie modérée', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Haute énergie', color: '#8b1a0e', classify: (v) => v > 0.66 },
     ],
   },
 };

@@ -82,11 +82,14 @@ interface ParsedTrack {
   genre: MajorGenre;
 }
 
+export type SearchMode = 'artist' | 'track';
+
 export interface Viz05State {
   selectedGenres: Set<MajorGenre>;
   sampleSize: number;
   sharedScales: boolean;
   search: string;
+  searchMode: SearchMode;
 }
 
 export interface Viz05Chart {
@@ -163,6 +166,7 @@ export function createViz05Chart(
     sampleSize: 500,
     sharedScales: true,
     search: '',
+    searchMode: 'artist',
   };
 
   function render() {
@@ -189,7 +193,7 @@ export function createViz05Chart(
     const fW = width / cols;
     const fH = 270;
     const height = rowCount * fH + 8;
-    const m = { top: 42, right: 18, bottom: 48, left: 52 };
+    const m = { top: 42, right: 26, bottom: 48, left: 52 };
 
     const allV = facets.flatMap(([, v]) => v);
     const xDom = state.sharedScales
@@ -274,7 +278,7 @@ export function createViz05Chart(
 
       facet.append('g').attr('class', 'axis').call(d3.axisLeft(ySc).ticks(4));
 
-      // Axis labels (only on outer facets)
+      // Axis labels — Y only on left column, X on every panel
       if (col === 0) {
         facet
           .append('text')
@@ -285,19 +289,20 @@ export function createViz05Chart(
           .attr('text-anchor', 'middle')
           .text(lbl.axisY);
       }
-      if (row === rowCount - 1) {
-        facet
-          .append('text')
-          .attr('class', 'axis-label')
-          .attr('x', iW / 2)
-          .attr('y', iH + 38)
-          .attr('text-anchor', 'middle')
-          .text(lbl.axisX);
-      }
+      facet
+        .append('text')
+        .attr('class', 'axis-label')
+        .attr('x', iW / 2)
+        .attr('y', iH + 38)
+        .attr('text-anchor', 'middle')
+        .text(lbl.axisX);
 
-      // Points
-      const matches = (d: ParsedTrack) =>
-        !!srch && `${d.trackName} ${d.artists}`.toLowerCase().includes(srch);
+      // Points — search targets only the selected field to avoid ambiguity
+      const matches = (d: ParsedTrack) => {
+        if (!srch) return false;
+        const field = state.searchMode === 'artist' ? d.artists : d.trackName;
+        return field.toLowerCase().includes(srch);
+      };
 
       facet
         .selectAll<SVGCircleElement, ParsedTrack>('.point')

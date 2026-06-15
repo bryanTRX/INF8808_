@@ -5,7 +5,7 @@ import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
-import { createViz05Chart, MAJOR_GENRES, Viz05Chart, Viz05State } from './chart';
+import { createViz05Chart, MAJOR_GENRES, SearchMode, Viz05Chart, Viz05State } from './chart';
 
 const GENRE_LABELS_FR: Record<string, string> = {
   pop: 'Pop', rock: 'Rock', 'hip-hop': 'Hip-Hop', electronic: 'Électronique',
@@ -35,6 +35,7 @@ export class Viz05Component implements AfterViewInit, OnDestroy {
   sampleSize = 500;
   sharedScales = true;
   search = '';
+  searchMode: SearchMode = 'artist';
   readonly loadState = new VizLoadState(() => this.langService.lang());
 
   readonly langService = inject(LangService);
@@ -76,6 +77,7 @@ export class Viz05Component implements AfterViewInit, OnDestroy {
     this.sampleSize = 500;
     this.sharedScales = true;
     this.search = '';
+    this.searchMode = 'artist';
     this.refresh();
   }
 
@@ -85,6 +87,7 @@ export class Viz05Component implements AfterViewInit, OnDestroy {
       sampleSize: this.sampleSize,
       sharedScales: this.sharedScales,
       search: this.search.trim(),
+      searchMode: this.searchMode,
     };
     this.controller?.update(state);
   }

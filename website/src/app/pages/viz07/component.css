@@ -12,3 +12,34 @@
 .stat-value { font-size: 1.1rem; font-weight: 700; color: var(--text); }
 .stat-hint { font-size: 0.72rem; color: var(--muted); }
 .bar.is-hovered { fill: var(--chart-bar) !important; }
+
+/* Scrollable wrapper: the SVG is wider than the container and scrolls */
+.viz07-scroll {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) var(--panel);
+}
+
+/* Override global max-width so the wide SVG isn't constrained */
+.viz07-scroll svg {
+  max-width: none !important;
+  display: block;
+}
+
+/* Scrollbar styling — WebKit/Blink (Chrome, Edge, Safari) */
+.viz07-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.viz07-scroll::-webkit-scrollbar-track {
+  background: var(--panel);
+  border-radius: 4px;
+}
+.viz07-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.viz07-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}

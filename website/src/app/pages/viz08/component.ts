@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -7,7 +7,7 @@ import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
 import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
-import { createViz08Chart, FEATURE_KEYS, FeatureKey, Viz08Chart } from './chart';
+import { createViz08Chart, FEATURE_KEYS, FeatureKey, Viz08Chart, getFeatureLabels } from './chart';
 
 @Component({
   selector: 'app-viz08',
@@ -17,11 +17,11 @@ import { createViz08Chart, FEATURE_KEYS, FeatureKey, Viz08Chart } from './chart'
 })
 export class Viz08Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
-  readonly features = FEATURE_KEYS;
+  readonly featureKeys = FEATURE_KEYS;
+  readonly featureLabels = computed(() => getFeatureLabels(this.langService.lang()));
   feature: FeatureKey = 'valence';
   readonly langService = inject(LangService);
   readonly loadState = new VizLoadState(() => this.langService.lang());
-
 
   private dataService = inject(VizDataService);
   private controller?: Viz08Chart;
@@ -29,11 +29,15 @@ export class Viz08Component implements AfterViewInit, OnDestroy {
   private cleanupTheme?: () => void;
   private tip = createTooltip();
 
+  constructor() {
+    effect(() => { const l = this.langService.lang(); this.controller?.setLang(l); });
+  }
+
   ngAfterViewInit() {
     this.dataService.loadDataset().subscribe({
       next: (rows) => {
         deferChartInit(() => {
-          this.controller = createViz08Chart(this.chartRef.nativeElement, rows, this.tip);
+          this.controller = createViz08Chart(this.chartRef.nativeElement, rows, this.tip, this.langService.lang());
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.controller?.resize());
           this.cleanupTheme = observeTheme(() => this.controller?.resize());
           this.loadState.setLoaded(rows.length);

@@ -1,41 +1,65 @@
 import * as d3 from 'd3';
 import { TrackRow } from '../../core/models/track-row';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
+import type { Lang } from '../../core/services/lang.service';
 
 export type HeatmapMode = 'energy-loudness' | 'speech-dance';
 
-const MODES: Record<HeatmapMode, {
-  title: string;
-  xKey: keyof TrackRow;
-  yKey: keyof TrackRow;
-  xLabel: string;
-  yLabel: string;
-  xDomain: [number, number];
-  yDomain: [number, number];
+type ModeDef = {
+  title: string; xKey: keyof TrackRow; yKey: keyof TrackRow;
+  xLabel: string; yLabel: string;
+  xDomain: [number, number]; yDomain: [number, number];
   color: (t: number) => string;
-}> = {
+  btnLabel: string;
+};
+
+const MODES_EN: Record<HeatmapMode, ModeDef> = {
   'energy-loudness': {
-    title: 'Audio Correlation: The Density of Energy vs. Loudness (All Tracks)',
+    title: 'Where Energy Meets Loudness — Track Density across All Genres',
     xKey: 'energy', yKey: 'loudness',
     xLabel: 'Energy Level (0.0 to 1.0)', yLabel: 'Loudness (Decibels)',
     xDomain: [0, 1], yDomain: [-60, 0],
-    color: d3.interpolateViridis,
+    color: d3.interpolateViridis, btnLabel: 'Energy / Loudness',
   },
   'speech-dance': {
-    title: 'Vocal Rhythm: The Density of Speechiness vs. Danceability (All Tracks)',
+    title: 'Vocal Presence and Danceability — Track Density across All Genres',
     xKey: 'speechiness', yKey: 'danceability',
     xLabel: 'Speechiness Level (0.0 to 1.0)', yLabel: 'Danceability Score (0.0 to 1.0)',
     xDomain: [0, 1], yDomain: [0, 1],
-    color: d3.interpolatePlasma,
+    color: d3.interpolatePlasma, btnLabel: 'Speech / Dance',
   },
 };
+const MODES_FR: Record<HeatmapMode, ModeDef> = {
+  'energy-loudness': {
+    title: 'Énergie et volume — Densité des titres sur tous les genres',
+    xKey: 'energy', yKey: 'loudness',
+    xLabel: 'Énergie (0,0 à 1,0)', yLabel: 'Volume (décibels)',
+    xDomain: [0, 1], yDomain: [-60, 0],
+    color: d3.interpolateViridis, btnLabel: 'Énergie / Volume',
+  },
+  'speech-dance': {
+    title: 'Présence vocale et dansabilité — Densité des titres sur tous les genres',
+    xKey: 'speechiness', yKey: 'danceability',
+    xLabel: 'Parole (0,0 à 1,0)', yLabel: 'Dansabilité (0,0 à 1,0)',
+    xDomain: [0, 1], yDomain: [0, 1],
+    color: d3.interpolatePlasma, btnLabel: 'Parole / Danse',
+  },
+};
+
+const L = (lang: Lang) => lang === 'fr'
+  ? { modes: MODES_FR, trackCount: 'Nombre de titres' }
+  : { modes: MODES_EN, trackCount: 'Track Count' };
+
+export function getModeLabels(lang: Lang): Record<HeatmapMode, string> {
+  const m = L(lang).modes;
+  return { 'energy-loudness': m['energy-loudness'].btnLabel, 'speech-dance': m['speech-dance'].btnLabel };
+}
 
 const BINS = 50;
 
 interface Cell { xi: number; yi: number; count: number; x0: number; x1: number; y0: number; y1: number }
 
-function bin2d(rows: TrackRow[], mode: HeatmapMode): Cell[] {
-  const cfg = MODES[mode];
+function bin2d(rows: TrackRow[], cfg: ModeDef): Cell[] {
   const points = rows
     .map((d) => ({ x: Number(d[cfg.xKey]), y: Number(d[cfg.yKey]) }))
     .filter((d) => Number.isFinite(d.x) && Number.isFinite(d.y));
@@ -68,17 +92,20 @@ function marginalHist(values: number[], domain: [number, number], bins = 30) {
 
 export interface Viz09Chart {
   setMode: (mode: HeatmapMode) => void;
+  setLang: (lang: Lang) => void;
   resize: () => void;
   destroy: () => void;
 }
 
-export function createViz09Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip): Viz09Chart {
+export function createViz09Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz09Chart {
   let mode: HeatmapMode = 'energy-loudness';
+  let _lang: Lang = initLang;
 
   function render() {
     container.innerHTML = '';
-    const cfg = MODES[mode];
-    const cells = bin2d(rows, mode);
+    const lbl = L(_lang);
+    const cfg = lbl.modes[mode];
+    const cells = bin2d(rows, cfg);
     const maxCount = d3.max(cells, (d) => d.count) || 1;
 
     const width = Math.max(640, container.clientWidth || 900);
@@ -105,7 +132,7 @@ export function createViz09Chart(container: HTMLElement, rows: TrackRow[], tip: 
       .attr('height', (d) => Math.max(0, y(d.y0) - y(d.y1)))
       .attr('fill', (d) => color(d.count))
       .on('mouseover', (event, d) => {
-        tip.show(event, `<div>Count: <span class="tooltip-value">${d.count}</span></div>
+        tip.show(event, `<div>${lbl.trackCount}: <span class="tooltip-value">${d.count}</span></div>
           <div>${cfg.xLabel}: ${d3.format('.2f')(d.x0)} – ${d3.format('.2f')(d.x1)}</div>
           <div>${cfg.yLabel}: ${d3.format('.2f')(d.y0)} – ${d3.format('.2f')(d.y1)}</div>`);
       })
@@ -153,12 +180,13 @@ export function createViz09Chart(container: HTMLElement, rows: TrackRow[], tip: 
       .attr('fill', (d) => color(d));
     legendG.append('g').attr('transform', `translate(${legendW + 4},0)`)
       .call(d3.axisRight(legendScale).ticks(4).tickFormat(d3.format('~s')));
-    legendG.append('text').attr('class', 'legend-label').attr('x', 0).attr('y', -6).attr('font-size', 10).text('Track Count');
+    legendG.append('text').attr('class', 'legend-label').attr('x', 0).attr('y', -6).attr('font-size', 10).text(lbl.trackCount);
   }
 
   render();
   return {
     setMode(m) { mode = m; render(); },
+    setLang(l) { _lang = l; render(); },
     resize: render,
     destroy: () => { container.innerHTML = ''; },
   };

@@ -22,15 +22,16 @@ const FEATURES_EN: typeof FEATURES_FR = [
   { key: 'tempo',        label: 'Tempo (BPM)',    unit: ' BPM', domain: [60, 200] },
 ];
 export const ENERGY_FEATURES = FEATURES_FR;
+export function getEnergyFeatures(lang: Lang) { return lang === 'fr' ? FEATURES_FR : FEATURES_EN; }
 const L = (lang: Lang) => lang === 'fr' ? {
   features: FEATURES_FR,
-  title: (lbl: string, n: number) => `${lbl} moyenne par genre — top ${n} genres`,
-  hint: 'Barres = moyenne · lignes = 1er–3e quartile · Trié du plus élevé au plus faible',
+  title: (lbl: string, n: number) => `${lbl} moyenne par genre parmi les top ${n} genres`,
+  hint: 'Les barres indiquent la moyenne. Les lignes délimitent le premier et le troisième quartile. Les genres sont classés du plus élevé au plus faible.',
   tip: { avg: 'moy.', tracks: 'titres' },
 } : {
   features: FEATURES_EN,
-  title: (lbl: string, n: number) => `Average ${lbl} by genre — top ${n} genres`,
-  hint: 'Bars = average · lines = Q1–Q3 quartile · Sorted highest to lowest',
+  title: (lbl: string, n: number) => `Average ${lbl} by genre across the top ${n} genres`,
+  hint: 'Bars show the mean value. Lines mark the Q1 and Q3 quartiles. Genres are sorted from highest to lowest.',
   tip: { avg: 'avg.', tracks: 'tracks' },
 };
 
@@ -156,8 +157,8 @@ export function createViz11Chart(container: HTMLElement, rows: TrackRow[], tip: 
         d3.select(this).attr('opacity', 0.8);
         tip.show(event,
           `<div><strong>${d.genre}</strong></div>
-           <div>${cfg.label} moy. : <span class="tooltip-value">${d3.format('.3f')(d.value)}${cfg.unit}</span></div>
-           <div>Q1 : ${d3.format('.3f')(d.q1)}${cfg.unit} · Q3 : ${d3.format('.3f')(d.q3)}${cfg.unit}</div>
+           <div>${cfg.label} ${lbl.tip.avg} : <span class="tooltip-value">${d3.format('.3f')(d.value)}${cfg.unit}</span></div>
+           <div>Q1 : ${d3.format('.3f')(d.q1)}${cfg.unit} &nbsp;|&nbsp; Q3 : ${d3.format('.3f')(d.q3)}${cfg.unit}</div>
            <div>${d3.format(',')(d.count)} ${lbl.tip.tracks}</div>`);
       })
       .on('mousemove', (event) => tip.move(event))

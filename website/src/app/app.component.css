@@ -37,6 +37,15 @@
   flex-shrink: 0;
 }
 
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #0f0f12;
+  padding: 2px;
+}
+
 .brand-text {
   display: flex;
   flex-direction: column;

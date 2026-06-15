@@ -1,10 +1,10 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
-import { createViz14Chart, HEX_PAIRS, HexPairIdx, Viz14Chart } from './chart';
+import { createViz14Chart, getHexPairs, HexPairIdx, Viz14Chart } from './chart';
 import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
@@ -17,7 +17,7 @@ import { VizLoadState } from '../../core/i18n/viz-load-state';
 export class Viz14Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
 
-  readonly pairs = HEX_PAIRS;
+  readonly pairs = computed(() => getHexPairs(this.langService.lang()));
   pairIdx: HexPairIdx = 0;
   readonly loadState = new VizLoadState(() => this.langService.lang());
 

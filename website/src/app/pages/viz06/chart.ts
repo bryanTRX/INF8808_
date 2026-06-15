@@ -12,14 +12,14 @@ const GENRES = [
 
 const L = (lang: Lang) => lang === 'fr' ? {
   tracks: 'titres', axisY: 'Popularité (0–100)',
-  axisX: 'Acoustique (0 = électrique · 1 = acoustique)',
+  axisX: 'Niveau acoustique (de 0 = production électronique à 1 = acoustique pur)',
   labels: { low: 'peu acoustique', mid: 'mixte', high: 'très acoustique' },
   legend: ['Tendance (régression)', 'Moyenne par tranche'],
   tip: { acoustic: 'Acoustique', pop: 'Popularité' },
 } : {
   tracks: 'tracks', axisY: 'Popularity (0–100)',
-  axisX: 'Acousticness (0 = electric · 1 = acoustic)',
-  labels: { low: 'non-acoustic', mid: 'mixed', high: 'very acoustic' },
+  axisX: 'Acousticness (0 = fully produced, 1 = fully acoustic)',
+  labels: { low: 'not acoustic', mid: 'mixed', high: 'very acoustic' },
   legend: ['Trend (regression)', 'Binned mean'],
   tip: { acoustic: 'Acousticness', pop: 'Popularity' },
 };
@@ -115,7 +115,7 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
         .attr('fill', meta.color)
         .style('font-size', '12px')
         .style('font-weight', '700')
-        .text(`${meta.label}  ·  ${d3.format(',')(values.length)} ${lbl.tracks}`);
+        .text(`${meta.label}  —  ${d3.format(',')(values.length)} ${lbl.tracks}`);
 
       // Grid
       facet

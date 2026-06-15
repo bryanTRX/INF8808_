@@ -246,7 +246,7 @@ export function createViz05Chart(
         .attr('fill', color)
         .style('font-size', '11px')
         .style('font-weight', '700')
-        .text(`${lbl.genreLabels[genre]}  ·  ${d3.format(',')(values.length)} ${lbl.tracks}`);
+        .text(`${lbl.genreLabels[genre]}  —  ${d3.format(',')(values.length)} ${lbl.tracks}`);
 
       // Grid lines
       facet

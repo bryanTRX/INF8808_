@@ -1,29 +1,37 @@
 <section class="viz-page">
   <header>
-    <h1>Nuage de points libre</h1>
-    <p class="subtitle">Explorez la relation entre deux caractéristiques audio quelconques. Chaque point = un titre · Couleur = genre · Ligne verte = tendance.</p>
+    <h1>{{ langService.lang() === 'fr' ? 'Nuage de points libre' : 'Free Scatter Plot' }}</h1>
+    <p class="subtitle">{{ langService.lang() === 'fr'
+      ? 'Explorez la relation entre deux caractéristiques audio. Chaque point représente un titre, coloré par genre. La ligne verte indique la tendance globale.'
+      : 'Explore the relationship between any two audio features. Each dot represents one track, colored by genre. The green line shows the overall trend.' }}</p>
   </header>
   <p class="status">{{ loadState.status() }}</p>
   <div class="controls">
-    <label>Axe X
+    <label>{{ langService.lang() === 'fr' ? 'Axe X' : 'X Axis' }}
       <select [(ngModel)]="xAxis" (ngModelChange)="refresh()">
-        @for (a of axes; track a.key) {
+        @for (a of axes(); track a.key) {
           <option [value]="a.key">{{ a.label }}</option>
         }
       </select>
     </label>
-    <label>Axe Y
+    <label>{{ langService.lang() === 'fr' ? 'Axe Y' : 'Y Axis' }}
       <select [(ngModel)]="yAxis" (ngModelChange)="refresh()">
-        @for (a of axes; track a.key) {
+        @for (a of axes(); track a.key) {
           <option [value]="a.key">{{ a.label }}</option>
         }
       </select>
     </label>
-    <label>Échantillon {{ sampleSize }}
+    <label>{{ langService.lang() === 'fr' ? 'Échantillon' : 'Sample' }} {{ sampleSize }}
       <input type="range" min="500" max="5000" step="250" [(ngModel)]="sampleSize" (ngModelChange)="refresh()" />
     </label>
-    <label><input type="checkbox" [(ngModel)]="showTrend" (ngModelChange)="refresh()" /> Afficher tendance</label>
-    <label>Recherche <input type="text" [(ngModel)]="search" (ngModelChange)="refresh()" placeholder="Titre ou artiste" /></label>
+    <label class="chip-label" style="cursor:pointer">
+      <input type="checkbox" [(ngModel)]="showTrend" (ngModelChange)="refresh()" style="display:none">
+      {{ langService.lang() === 'fr' ? 'Afficher la tendance' : 'Show trend' }}
+    </label>
+    <label>{{ langService.lang() === 'fr' ? 'Recherche' : 'Search' }}
+      <input type="text" [(ngModel)]="search" (ngModelChange)="refresh()"
+        [placeholder]="langService.lang() === 'fr' ? 'Titre ou artiste' : 'Track or artist'" />
+    </label>
   </div>
   <div #chart class="chart-container">
     @if (loadState.loading()) {

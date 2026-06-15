@@ -17,15 +17,16 @@ const HEX_PAIRS_EN = [
   { xKey: 'tempo'        as const, yKey: 'popularity' as const, xLabel: 'Tempo (BPM)',    yLabel: 'Popularity',    xDom: [50,220] as [number,number], yDom: [0,100]  as [number,number] },
 ] as const;
 export const HEX_PAIRS = HEX_PAIRS_FR;
+export function getHexPairs(lang: Lang) { return lang === 'fr' ? HEX_PAIRS_FR as readonly HexPairDef[] : HEX_PAIRS_EN as readonly HexPairDef[]; }
 const L = (lang: Lang) => lang === 'fr' ? {
   pairs: HEX_PAIRS_FR as readonly HexPairDef[],
   title: (y: string, x: string) => `Densité hexagonale : ${y} vs ${x}`,
-  hint: 'Chaque hexagone = densité de titres dans cette zone · Plus foncé = plus dense',
+  hint: 'Chaque hexagone représente la concentration de titres dans cette zone. Plus il est foncé, plus il contient de titres.',
   tracks: 'Titres',
 } : {
   pairs: HEX_PAIRS_EN as readonly HexPairDef[],
   title: (y: string, x: string) => `Hexagonal Density: ${y} vs ${x}`,
-  hint: 'Each hexagon = track density in that area · Darker = more dense',
+  hint: 'Each hexagon shows how many tracks fall in that area. Darker hexagons indicate a higher concentration of tracks.',
   tracks: 'Tracks',
 };
 

@@ -99,14 +99,14 @@ export class Viz07Component implements AfterViewInit, OnDestroy {
     this.stats = lang === 'fr'
       ? [
           { label: 'Titres', value: this._meta.tracks_in_view.toLocaleString(), hint: 'Moins de 15 min' },
-          { label: 'Pop. moyenne', value: `${this._overallAvg.toFixed(1)}/100`, hint: 'Moyenne globale' },
-          { label: 'Corrélation', value: String(this._meta.correlation), hint: 'Durée vs popularité' },
+          { label: 'Popularité moy.', value: `${this._overallAvg.toFixed(1)}/100`, hint: 'Moyenne globale' },
+          { label: 'Corrélation', value: String(this._meta.correlation), hint: 'Durée et popularité' },
           { label: 'Taille de bin', value: '30 sec', hint: 'Largeur de chaque barre' },
         ]
       : [
           { label: 'Tracks', value: this._meta.tracks_in_view.toLocaleString(), hint: 'Under 15 min' },
-          { label: 'Avg. popularity', value: `${this._overallAvg.toFixed(1)}/100`, hint: 'Overall mean' },
-          { label: 'Correlation', value: String(this._meta.correlation), hint: 'Duration vs. pop.' },
+          { label: 'Avg popularity', value: `${this._overallAvg.toFixed(1)}/100`, hint: 'Overall mean' },
+          { label: 'Correlation', value: String(this._meta.correlation), hint: 'Duration and popularity' },
           { label: 'Bin size', value: '30 sec', hint: 'Each bar width' },
         ];
   }

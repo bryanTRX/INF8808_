@@ -1,7 +1,7 @@
 <section class="viz-page">
   <p class="status">{{ loadState.status() }}</p>
   <div class="controls">
-    <label>Method
+    <label>{{ langService.lang() === 'fr' ? 'Méthode' : 'Method' }}
       <select [(ngModel)]="method" (ngModelChange)="onMethodChange()">
         <option value="pearson">Pearson</option>
         <option value="spearman">Spearman</option>

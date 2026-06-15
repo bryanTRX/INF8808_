@@ -39,18 +39,18 @@ export interface Viz12State {
 }
 
 const L = (lang: Lang) => lang === 'fr' ? {
-  titleAll: (n: number) => `Distribution de la popularité — ${n} titres`,
-  hintAll: 'Chaque point = un titre · Position = score de popularité Spotify (0–100)',
-  titleGenre: (n: number) => `Popularité par genre — ${n} titres`,
-  hintGenre: 'Une ligne par genre · Horizontal = popularité',
-  axisX: 'Popularité Spotify (0 = inconnu · 100 = mondial)',
+  titleAll: (n: number) => `Distribution de la popularité sur ${n} titres`,
+  hintAll: 'Chaque point représente un titre. Sa position indique son score de popularité Spotify, de 0 à 100.',
+  titleGenre: (n: number) => `Popularité par genre sur ${n} titres`,
+  hintGenre: 'Une rangée par genre. La position horizontale indique la popularité.',
+  axisX: 'Popularité Spotify (de 0 à 100)',
   tip: { genre: 'Genre', pop: 'Popularité' },
 } : {
-  titleAll: (n: number) => `Popularity Distribution — ${n} tracks`,
-  hintAll: 'Each dot = one track · Position = Spotify popularity score (0–100)',
-  titleGenre: (n: number) => `Popularity by Genre — ${n} tracks`,
-  hintGenre: 'One row per genre · Horizontal = popularity',
-  axisX: 'Spotify Popularity (0 = unknown · 100 = global)',
+  titleAll: (n: number) => `Popularity Distribution across ${n} tracks`,
+  hintAll: 'Each dot represents one track. Its horizontal position shows the Spotify popularity score from 0 to 100.',
+  titleGenre: (n: number) => `Popularity by Genre across ${n} tracks`,
+  hintGenre: 'One row per genre. The horizontal position shows popularity.',
+  axisX: 'Spotify Popularity (0 to 100)',
   tip: { genre: 'Genre', pop: 'Popularity' },
 };
 
@@ -206,7 +206,7 @@ export function createViz12Chart(container: HTMLElement, rows: TrackRow[], tip: 
             tip.show(event,
               `<div><strong>${d.trackName}</strong></div>
                <div class="muted">${d.artists}</div>
-               <div>Popularité : <span class="tooltip-value">${d.popularity}</span>/100</div>`);
+               <div>${lbl.tip.pop} : <span class="tooltip-value">${d.popularity}</span>/100</div>`);
           })
           .on('mousemove', (event) => tip.move(event))
           .on('mouseleave', function () { d3.select(this).attr('r', 2.5).attr('opacity', 0.55); tip.hide(); });

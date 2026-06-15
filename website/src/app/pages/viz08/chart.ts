@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import { TrackRow } from '../../core/models/track-row';
 import { filterTopGenres } from '../../viz-shared/utils/data-helpers';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
+import type { Lang } from '../../core/services/lang.service';
 
 const TIERS = ['0-19', '20-39', '40-59', '60-79', '80-100'] as const;
 type Tier = (typeof TIERS)[number];
@@ -14,7 +15,9 @@ interface CategoryDef {
   classify: (v: number) => boolean;
 }
 
-const FEATURE_CONFIG: Record<FeatureKey, { title: string; categories: CategoryDef[] }> = {
+type FeatureConfig = Record<FeatureKey, { title: string; categories: CategoryDef[] }>;
+
+const FEATURE_CONFIG_EN: FeatureConfig = {
   valence: {
     title: 'Valence Breakdown Across Popularity Tiers',
     categories: [
@@ -26,7 +29,7 @@ const FEATURE_CONFIG: Record<FeatureKey, { title: string; categories: CategoryDe
   instrumentalness: {
     title: 'Instrumentalness Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'vocal', label: 'Vocal-Heavy', color: '#636EFA', classify: (v) => v <= 0.1 },
+      { key: 'vocal', label: 'Mostly Vocal', color: '#636EFA', classify: (v) => v <= 0.1 },
       { key: 'mixed', label: 'Mixed', color: '#BEC1D4', classify: (v) => v > 0.1 && v <= 0.8 },
       { key: 'inst', label: 'Instrumental', color: '#EF553B', classify: (v) => v > 0.8 },
     ],
@@ -57,6 +60,76 @@ const FEATURE_CONFIG: Record<FeatureKey, { title: string; categories: CategoryDe
   },
 };
 
+const FEATURE_CONFIG_FR: FeatureConfig = {
+  valence: {
+    title: 'Répartition de la valence par niveau de popularité',
+    categories: [
+      { key: 'low', label: 'Triste/Négatif (Bas)', color: '#636EFA', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Neutre (Moyen)', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Joyeux/Positif (Haut)', color: '#EF553B', classify: (v) => v > 0.66 },
+    ],
+  },
+  instrumentalness: {
+    title: 'Répartition de l\'instrumental par niveau de popularité',
+    categories: [
+      { key: 'vocal', label: 'Très vocal', color: '#636EFA', classify: (v) => v <= 0.1 },
+      { key: 'mixed', label: 'Mixte', color: '#BEC1D4', classify: (v) => v > 0.1 && v <= 0.8 },
+      { key: 'inst', label: 'Instrumental', color: '#EF553B', classify: (v) => v > 0.8 },
+    ],
+  },
+  speechiness: {
+    title: 'Répartition de la parole par niveau de popularité',
+    categories: [
+      { key: 'low', label: 'Peu de parole', color: '#636EFA', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Parole modérée', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Très parlé', color: '#EF553B', classify: (v) => v > 0.66 },
+    ],
+  },
+  danceability: {
+    title: 'Répartition de la dansabilité par niveau de popularité',
+    categories: [
+      { key: 'low', label: 'Peu dansable', color: '#636EFA', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Moyennement dansable', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Très dansable', color: '#EF553B', classify: (v) => v > 0.66 },
+    ],
+  },
+  energy: {
+    title: 'Répartition de l\'énergie par niveau de popularité',
+    categories: [
+      { key: 'low', label: 'Faible énergie', color: '#636EFA', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Énergie modérée', color: '#BEC1D4', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Haute énergie', color: '#EF553B', classify: (v) => v > 0.66 },
+    ],
+  },
+};
+
+export const FEATURE_LABELS_EN: Record<FeatureKey, string> = {
+  valence: 'Valence', instrumentalness: 'Instrumentalness',
+  speechiness: 'Speechiness', danceability: 'Danceability', energy: 'Energy',
+};
+export const FEATURE_LABELS_FR: Record<FeatureKey, string> = {
+  valence: 'Valence', instrumentalness: 'Instrumental',
+  speechiness: 'Parole', danceability: 'Dansabilité', energy: 'Énergie',
+};
+
+const L = (lang: Lang) => lang === 'fr' ? {
+  config: FEATURE_CONFIG_FR,
+  labels: FEATURE_LABELS_FR,
+  axisY: 'Proportion de titres (%)',
+  axisX: 'Niveau de popularité',
+  titlePrefix: 'Anatomie d\'un hit :',
+  tipTracks: 'Titres',
+} : {
+  config: FEATURE_CONFIG_EN,
+  labels: FEATURE_LABELS_EN,
+  axisY: 'Percentage of Tracks (%)',
+  axisX: 'Popularity Tier',
+  titlePrefix: 'The Anatomy of a Hit:',
+  tipTracks: 'Tracks',
+};
+
+export function getFeatureLabels(lang: Lang) { return lang === 'fr' ? FEATURE_LABELS_FR : FEATURE_LABELS_EN; }
+
 function popularityTier(pop: number): Tier {
   if (pop <= 19) return '0-19';
   if (pop <= 39) return '20-39';
@@ -78,16 +151,18 @@ interface TierBucket {
 
 export interface Viz08Chart {
   setFeature: (feature: FeatureKey) => void;
+  setLang: (lang: Lang) => void;
   resize: () => void;
   destroy: () => void;
 }
 
-export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip): Viz08Chart {
+export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz08Chart {
   const filtered = filterTopGenres(rows, 50);
   let feature: FeatureKey = 'valence';
+  let _lang: Lang = initLang;
 
   function buildData(feat: FeatureKey): TierRow[] {
-    const config = FEATURE_CONFIG[feat];
+    const config = L(_lang).config[feat];
     const keys = config.categories.map((c) => c.key);
     const tierMap = new Map<Tier, TierBucket>();
 
@@ -119,7 +194,8 @@ export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: 
 
   function render() {
     container.innerHTML = '';
-    const config = FEATURE_CONFIG[feature];
+    const lbl = L(_lang);
+    const config = lbl.config[feature];
     const keys = config.categories.map((c) => c.key);
     const data = buildData(feature);
 
@@ -138,15 +214,15 @@ export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     g.append('text').attr('class', 'chart-title').attr('y', -24)
-      .text(`The Anatomy of a Hit: ${config.title} (Top 50 Genres)`);
+      .text(`${lbl.titlePrefix} ${config.title}`);
 
     g.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6).tickFormat((d) => `${d}%`));
     g.append('text').attr('class', 'axis-label').attr('transform', 'rotate(-90)')
-      .attr('x', -innerHeight / 2).attr('y', -42).attr('text-anchor', 'middle').text('Percentage of Tracks (%)');
+      .attr('x', -innerHeight / 2).attr('y', -42).attr('text-anchor', 'middle').text(lbl.axisY);
 
     g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerHeight})`).call(d3.axisBottom(x));
     g.append('text').attr('class', 'axis-label').attr('x', innerWidth / 2)
-      .attr('y', innerHeight + 36).attr('text-anchor', 'middle').text('Popularity Tier');
+      .attr('y', innerHeight + 36).attr('text-anchor', 'middle').text(lbl.axisX);
 
     g.selectAll('.bar-group').data(stacked).join('g')
       .attr('fill', (s) => config.categories.find((c) => c.key === s.key)?.color || '#999')
@@ -162,7 +238,7 @@ export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: 
         const pct = (d[1] - d[0]);
         tip.show(event, `<div><strong>${d.data.tier}</strong></div>
           <div>${cat.label}: <span class="tooltip-value">${d3.format('.1f')(pct)}%</span></div>
-          <div>Tracks: ${d3.format(',')(d.data.total)}</div>`);
+          <div>${lbl.tipTracks}: ${d3.format(',')(d.data.total)}</div>`);
       })
       .on('mousemove', (event) => tip.move(event))
       .on('mouseout', () => tip.hide());
@@ -178,6 +254,7 @@ export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: 
   render();
   return {
     setFeature(f) { feature = f; render(); },
+    setLang(l) { _lang = l; render(); },
     resize: render,
     destroy: () => { container.innerHTML = ''; },
   };

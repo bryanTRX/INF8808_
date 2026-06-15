@@ -27,15 +27,16 @@ const AXES_EN = [
   { key: 'tempo'            as const, label: 'Tempo (BPM)',   domain: [50, 220]  as [number, number] },
 ];
 export const SCATTER_AXES = AXES_FR;
+export function getScatterAxes(lang: Lang) { return lang === 'fr' ? AXES_FR : AXES_EN; }
 const L = (lang: Lang) => lang === 'fr' ? {
   axes: AXES_FR,
   title: (y: string, x: string) => `${y} en fonction de ${x}`,
-  hint: (n: number) => `${d3.format(',')(n)} titres · Couleur = genre · Choisissez les axes ci-dessus`,
+  hint: (n: number) => `${d3.format(',')(n)} titres affichés. La couleur représente le genre. Sélectionnez les axes depuis les contrôles ci-dessus.`,
   tip: { genre: 'Genre' },
 } : {
   axes: AXES_EN,
   title: (y: string, x: string) => `${y} as a function of ${x}`,
-  hint: (n: number) => `${d3.format(',')(n)} tracks · Color = genre · Choose axes above`,
+  hint: (n: number) => `${d3.format(',')(n)} tracks shown. Color indicates genre. Select the axes from the controls above.`,
   tip: { genre: 'Genre' },
 };
 

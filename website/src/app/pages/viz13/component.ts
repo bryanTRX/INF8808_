@@ -1,10 +1,10 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
-import { createViz13Chart, SCATTER_AXES, ScatterAxisKey, Viz13Chart } from './chart';
+import { createViz13Chart, getScatterAxes, ScatterAxisKey, Viz13Chart } from './chart';
 import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
@@ -17,7 +17,7 @@ import { VizLoadState } from '../../core/i18n/viz-load-state';
 export class Viz13Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
 
-  readonly axes = SCATTER_AXES;
+  readonly axes = computed(() => getScatterAxes(this.langService.lang()));
   xAxis: ScatterAxisKey = 'energy';
   yAxis: ScatterAxisKey = 'popularity';
   sampleSize = 2000;

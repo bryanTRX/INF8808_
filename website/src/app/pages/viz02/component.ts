@@ -13,7 +13,7 @@ import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
-import { SortOrder, TopN, createViz02Chart, Viz02Chart } from './chart';
+import { SortOrder, createViz02Chart, Viz02Chart } from './chart';
 import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
@@ -29,10 +29,7 @@ export class Viz02Component implements AfterViewInit, OnDestroy {
   readonly langService = inject(LangService);
   readonly loadState = new VizLoadState(() => this.langService.lang());
 
-  topN: TopN = 50;
-  sortOrder: SortOrder = 'asc';
-
-  readonly topNOptions: TopN[] = [10, 20, 30, 50];
+  sortOrder: SortOrder = 'desc';
 
   private dataService = inject(VizDataService);
   private controller?: Viz02Chart;
@@ -51,11 +48,6 @@ export class Viz02Component implements AfterViewInit, OnDestroy {
     return this.langService.lang() as 'en' | 'fr';
   }
 
-  setTopN(n: TopN) {
-    this.topN = n;
-    this.controller?.update({ topN: n, lang: this.lang });
-  }
-
   setSortOrder(order: SortOrder) {
     this.sortOrder = order;
     this.controller?.update({ sortOrder: order, lang: this.lang });
@@ -69,7 +61,7 @@ export class Viz02Component implements AfterViewInit, OnDestroy {
             this.chartRef.nativeElement,
             rows,
             this.tip,
-            { topN: this.topN, sortOrder: this.sortOrder, lang: this.lang },
+            { sortOrder: this.sortOrder, lang: this.lang },
           );
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () =>
             this.controller?.resize(),

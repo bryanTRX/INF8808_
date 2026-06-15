@@ -99,7 +99,7 @@ export function createViz11Chart(container: HTMLElement, rows: TrackRow[], tip: 
       feature === 'loudness' ? d3.interpolateRdYlGn : d3.interpolateRdYlGn
     ).domain(cfg.domain);
 
-    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
     const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     svg.append('text')

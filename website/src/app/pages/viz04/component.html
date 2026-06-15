@@ -8,7 +8,7 @@
       </select>
     </label>
   </div>
-  <div #chart class="chart-container">
+  <div #chart class="chart-container" style="min-height:520px">
     @if (loadState.loading()) {
       <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
     }

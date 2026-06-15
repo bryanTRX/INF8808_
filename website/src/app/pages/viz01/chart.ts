@@ -196,7 +196,8 @@ export function createViz01Chart(
       .select(container)
       .append('svg')
       .attr('width', width)
-      .attr('height', svgH);
+      .attr('height', svgH)
+      .attr('viewBox', `0 0 ${width} ${svgH}`);
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 

@@ -210,7 +210,8 @@ export function createViz02Chart(
 
     // ── SVG ──────────────────────────────────────────────────────────────────
     const svg = d3.select(container).append('svg')
-      .attr('width', width).attr('height', height);
+      .attr('width', width).attr('height', height)
+      .attr('viewBox', `0 0 ${width} ${height}`);
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 

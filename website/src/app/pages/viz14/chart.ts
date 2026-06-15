@@ -98,7 +98,7 @@ export function createViz14Chart(container: HTMLElement, rows: TrackRow[], tip: 
       return `M${pts.map((p) => p.join(',')).join('L')}Z`;
     };
 
-    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
     const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     svg.append('text').attr('x', margin.left).attr('y', 22).attr('fill', CHART.text).attr('font-size', 15).attr('font-weight', 700).text(lbl.title(cfg.yLabel, cfg.xLabel));

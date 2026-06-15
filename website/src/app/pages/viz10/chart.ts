@@ -212,7 +212,7 @@ export function createViz10Chart(
     const levels = [0.25, 0.5, 0.75, 1];
 
     const theme = getChartTheme();
-    const svg = d3.select(radarContainer).append('svg').attr('width', width).attr('height', height);
+    const svg = d3.select(radarContainer).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
     const g = svg.append('g').attr('transform', `translate(${cx},${cy})`);
 
     g.selectAll('.grid').data(levels).join('circle')
@@ -294,7 +294,7 @@ export function createViz10Chart(
     const x = d3.scaleLinear().domain([1, maxRank]).range([0, innerWidth]);
     const y = d3.scaleLinear().domain(yExtent).nice().range([innerHeight, 0]);
 
-    const svg = d3.select(trendContainer).append('svg').attr('width', width).attr('height', height);
+    const svg = d3.select(trendContainer).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     const metricLabel = strings().trendMetrics.find((m) => m.key === metric)?.label || metric;

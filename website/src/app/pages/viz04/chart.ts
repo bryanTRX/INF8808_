@@ -129,7 +129,7 @@ export function createViz04Chart(container: HTMLElement, rows: TrackRow[], tip: 
     const lbl = L(_lang);
     const width = Math.max(640, container.clientWidth || 900);
     const height = Math.max(480, container.clientHeight || 520);
-    const margin = { top: 72, right: 60, bottom: 56, left: 150 };
+    const margin = { top: 72, right: 60, bottom: 68, left: 150 };
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
@@ -141,7 +141,7 @@ export function createViz04Chart(container: HTMLElement, rows: TrackRow[], tip: 
     const y = d3.scaleBand().domain(correlations.map((d) => d.label)).range([0, innerHeight]).padding(0.25);
 
     const theme = getChartTheme();
-    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     svg.append('text').attr('class', 'chart-title').attr('x', margin.left).attr('y', 28).attr('font-size', 18)
@@ -173,8 +173,11 @@ export function createViz04Chart(container: HTMLElement, rows: TrackRow[], tip: 
       .attr('font-size', 12)
       .text((d) => d.correlation.toFixed(2));
 
-    svg.append('text').attr('class', 'axis-label').attr('x', margin.left + innerWidth / 2).attr('y', height - 12)
-      .attr('text-anchor', 'middle').attr('font-size', 12)
+    g.append('text').attr('class', 'axis-label')
+      .attr('x', innerWidth / 2)
+      .attr('y', innerHeight + 48)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', 12)
       .text(lbl.axisLabel(method));
   }
 

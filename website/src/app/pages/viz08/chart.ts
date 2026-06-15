@@ -210,7 +210,7 @@ export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: 
     const stack = d3.stack<TierRow>().keys(keys).order(d3.stackOrderNone).offset(d3.stackOffsetNone);
     const stacked = stack(data);
 
-    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     g.append('text').attr('class', 'chart-title').attr('y', -24)

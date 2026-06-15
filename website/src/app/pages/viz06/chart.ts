@@ -78,7 +78,7 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
       ? ([0, d3.max(allV, (d) => d.popularity) || 100] as [number, number])
       : null;
     const srch = state.search.toLowerCase();
-    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
 
     facets.forEach(([meta, values], idx) => {
       const iW = fW - m.left - m.right;

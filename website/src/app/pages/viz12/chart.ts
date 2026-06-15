@@ -128,7 +128,7 @@ export function createViz12Chart(container: HTMLElement, rows: TrackRow[], tip: 
       const bandH = Math.abs(yExt[0]) + Math.abs(yExt[1]) + radius * 6;
       const height = margin.top + bandH + margin.bottom;
 
-      const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+      const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
       const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top + Math.abs(yExt[0]) + radius * 3})`);
 
       svg.append('text').attr('x', margin.left).attr('y', 22).attr('fill', CHART.text).attr('font-size', 15).attr('font-weight', 700).text(lbl.titleAll(pts.length));
@@ -175,7 +175,7 @@ export function createViz12Chart(container: HTMLElement, rows: TrackRow[], tip: 
       const height  = margin.top + genres.length * rowH + margin.bottom;
 
       const x = d3.scaleLinear().domain([0, 100]).range([0, iW]);
-      const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+      const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
 
       svg.append('text').attr('x', margin.left).attr('y', 22).attr('fill', CHART.text).attr('font-size', 15).attr('font-weight', 700).text(lbl.titleGenre(pts.length));
       svg.append('text').attr('x', margin.left).attr('y', 40).attr('fill', CHART.muted).attr('font-size', 11).text(lbl.hintGenre);

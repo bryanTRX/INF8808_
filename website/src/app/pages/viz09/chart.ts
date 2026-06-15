@@ -120,7 +120,7 @@ export function createViz09Chart(container: HTMLElement, rows: TrackRow[], tip: 
     const y = d3.scaleLinear().domain(cfg.yDomain).range([innerHeight, 0]);
     const color = d3.scaleSequential(cfg.color).domain([0, maxCount]);
 
-    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height);
+    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top + topMarg})`);
 
     g.append('text').attr('class', 'chart-title').attr('x', 0).attr('y', -topMarg + 16).text(cfg.title);

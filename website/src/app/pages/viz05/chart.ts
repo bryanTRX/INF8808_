@@ -51,9 +51,7 @@ const L = (lang: Lang) =>
         tracks: 'titres',
         axisY: 'Dansabilité',
         axisX: 'Tempo (BPM)',
-        sampleLabel: 'Échantillon',
         sharedLabel: 'Axes partagés',
-        searchLabel: 'Recherche',
         resetLabel: 'Réinitialiser',
         tip: { pop: 'Popularité', tempo: 'Tempo', dance: 'Dansabilité' },
       }
@@ -63,9 +61,7 @@ const L = (lang: Lang) =>
         tracks: 'tracks',
         axisY: 'Danceability',
         axisX: 'Tempo (BPM)',
-        sampleLabel: 'Sample size',
         sharedLabel: 'Shared axes',
-        searchLabel: 'Search',
         resetLabel: 'Reset',
         tip: { pop: 'Popularity', tempo: 'Tempo', dance: 'Danceability' },
       };
@@ -82,14 +78,10 @@ interface ParsedTrack {
   genre: MajorGenre;
 }
 
-export type SearchMode = 'artist' | 'track';
-
 export interface Viz05State {
   selectedGenres: Set<MajorGenre>;
   sampleSize: number;
   sharedScales: boolean;
-  search: string;
-  searchMode: SearchMode;
 }
 
 export interface Viz05Chart {
@@ -163,10 +155,8 @@ export function createViz05Chart(
 
   let state: Viz05State = {
     selectedGenres: new Set<MajorGenre>(['pop', 'rock', 'hip-hop', 'electronic', 'dance', 'latin']),
-    sampleSize: 500,
+    sampleSize: 250,
     sharedScales: true,
-    search: '',
-    searchMode: 'artist',
   };
 
   function render() {
@@ -189,24 +179,26 @@ export function createViz05Chart(
 
     const cols = facets.length >= 3 ? 3 : facets.length;
     const rowCount = Math.ceil(facets.length / cols);
-    const width = Math.max(container.clientWidth || 900, 640);
-    const fW = width / cols;
+    // Use getBoundingClientRect for accurate rendered width, avoiding SVG overflow clipping
+    const containerW = container.getBoundingClientRect().width || container.clientWidth || 640;
+    const width = Math.max(containerW, 480);
+    const fW = Math.floor(width / cols);
     const fH = 270;
     const height = rowCount * fH + 8;
-    const m = { top: 42, right: 26, bottom: 48, left: 52 };
+    const m = { top: 42, right: 32, bottom: 48, left: 52 };
 
     const allV = facets.flatMap(([, v]) => v);
     const xDom = state.sharedScales
       ? (d3.extent(allV, (d) => d.tempo) as [number, number])
       : null;
     const yDom = state.sharedScales ? ([0, 1] as [number, number]) : null;
-    const srch = state.search.toLowerCase();
 
     const svg = d3
       .select(container)
       .append('svg')
       .attr('width', width)
-      .attr('height', height);
+      .attr('height', height)
+      .attr('viewBox', `0 0 ${width} ${height}`);
 
     facets.forEach(([genre, values], idx) => {
       const col = idx % cols;
@@ -297,13 +289,6 @@ export function createViz05Chart(
         .attr('text-anchor', 'middle')
         .text(lbl.axisX);
 
-      // Points — search targets only the selected field to avoid ambiguity
-      const matches = (d: ParsedTrack) => {
-        if (!srch) return false;
-        const field = state.searchMode === 'artist' ? d.artists : d.trackName;
-        return field.toLowerCase().includes(srch);
-      };
-
       facet
         .selectAll<SVGCircleElement, ParsedTrack>('.point')
         .data(pts, (d) => d.trackId)
@@ -311,11 +296,9 @@ export function createViz05Chart(
         .attr('class', 'point')
         .attr('cx', (d) => xSc(d.tempo))
         .attr('cy', (d) => ySc(d.danceability))
-        .attr('r', (d) => (matches(d) ? 5 : 2.8))
+        .attr('r', 2.8)
         .attr('fill', color)
-        .attr('opacity', (d) =>
-          srch ? (matches(d) ? 0.95 : 0.06) : 0.42,
-        )
+        .attr('opacity', 0.42)
         .on('mouseenter', function (event, d) {
           d3.select(this).attr('r', 6).attr('opacity', 1);
           tip.show(
@@ -341,10 +324,8 @@ export function createViz05Chart(
           );
         })
         .on('mousemove', (event) => tip.move(event))
-        .on('mouseleave', function (_, d) {
-          d3.select(this)
-            .attr('r', matches(d) ? 5 : 2.8)
-            .attr('opacity', srch ? (matches(d) ? 0.95 : 0.06) : 0.42);
+        .on('mouseleave', function () {
+          d3.select(this).attr('r', 2.8).attr('opacity', 0.42);
           tip.hide();
         });
 

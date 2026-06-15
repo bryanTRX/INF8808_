@@ -1,1 +1,48 @@
 :host { display: block; }
+
+.family-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 99px;
+  border: 1.5px solid var(--chip-color, var(--border));
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.family-chip::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--border));
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+
+.family-chip--active {
+  background: color-mix(in srgb, var(--chip-color) 14%, transparent);
+  color: var(--chip-color);
+  border-color: var(--chip-color);
+}
+
+.family-chip--active::before {
+  opacity: 1;
+}
+
+.family-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.family-chip:not(:disabled):hover {
+  background: color-mix(in srgb, var(--chip-color) 20%, transparent);
+  color: var(--chip-color);
+}

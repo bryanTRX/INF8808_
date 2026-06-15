@@ -43,8 +43,6 @@ export class Viz01Component implements AfterViewInit, OnDestroy {
     checked: DEFAULT_DIM_KEYS.includes(d.key),
   }));
 
-  maxFamilies = 10;
-
   private dataService = inject(VizDataService);
   private controller?: Viz01Chart;
   private cleanupResize?: () => void;
@@ -52,7 +50,6 @@ export class Viz01Component implements AfterViewInit, OnDestroy {
   private tip = createTooltip();
 
   constructor() {
-    // Re-render chart when language changes
     effect(() => {
       const lang = this.langService.lang() as 'en' | 'fr';
       this.controller?.update({ lang });
@@ -76,10 +73,6 @@ export class Viz01Component implements AfterViewInit, OnDestroy {
     this.controller?.update({ dimKeys: this.selectedDimKeys, lang: this.lang });
   }
 
-  onFamilyCountChange() {
-    this.controller?.update({ maxFamilies: this.maxFamilies, lang: this.lang });
-  }
-
   ngAfterViewInit() {
     this.dataService.loadDataset().subscribe({
       next: (rows) => {
@@ -88,7 +81,7 @@ export class Viz01Component implements AfterViewInit, OnDestroy {
             this.chartRef.nativeElement,
             rows,
             this.tip,
-            { dimKeys: this.selectedDimKeys, maxFamilies: this.maxFamilies, lang: this.lang },
+            { dimKeys: this.selectedDimKeys, lang: this.lang },
           );
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () =>
             this.controller?.resize(),

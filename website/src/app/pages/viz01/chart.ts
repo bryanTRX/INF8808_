@@ -95,7 +95,7 @@ function buildFamilyData(rows: TrackRow[]): FamilyAvg[] {
 
 export interface Viz01Options {
   dimKeys: string[];
-  maxFamilies: number;
+  selectedFamilyKeys: string[];
   lang: 'en' | 'fr';
 }
 
@@ -118,7 +118,7 @@ export function createViz01Chart(
 
   let opts: Viz01Options = {
     dimKeys: DEFAULT_DIM_KEYS,
-    maxFamilies: 10,
+    selectedFamilyKeys: GENRE_FAMILIES.map((f) => f.key),
     lang: 'en',
     ...initialOpts,
   };
@@ -130,7 +130,8 @@ export function createViz01Chart(
   }
 
   function getActiveData(): FamilyAvg[] {
-    return allFamilyData.slice(0, Math.min(opts.maxFamilies, GENRE_FAMILIES.length));
+    const keys = new Set(opts.selectedFamilyKeys);
+    return allFamilyData.filter((d) => keys.has(d.family.key));
   }
 
   function isInBrush(d: FamilyAvg): boolean {
@@ -182,12 +183,12 @@ export function createViz01Chart(
     const totalTracks = allFamilyData.reduce((s, d) => s + d.trackCount, 0);
     const width = Math.max(580, container.clientWidth || 900);
 
-    const legendRows = Math.ceil(data.length / 5);
-    const legendH = legendRows * 26 + 20;
+    const legendRows = Math.ceil(allFamilyData.length / 5);
+    const legendH = legendRows * 30 + 28;
 
-    const svgH = Math.max(480, (container.clientHeight || 540));
-    const chartH = svgH - legendH;
-    const margin = { top: 50, right: 20, bottom: 20, left: 50 };
+    const svgH = Math.max(520, (container.clientHeight || 560));
+    const chartH = svgH - legendH - 16;
+    const margin = { top: 72, right: 20, bottom: 28, left: 50 };
     const innerW = width - margin.left - margin.right;
     const innerH = chartH - margin.top - margin.bottom;
 
@@ -203,7 +204,7 @@ export function createViz01Chart(
     g.append('text')
       .attr('class', 'chart-title')
       .attr('x', innerW / 2)
-      .attr('y', -28)
+      .attr('y', -42)
       .attr('text-anchor', 'middle')
       .text(
         lang === 'fr'
@@ -340,31 +341,59 @@ export function createViz01Chart(
       axisG.append('g').attr('class', 'dim-brush').call(brush as d3.BrushBehavior<unknown>);
     });
 
-    // Legend below chart
+    // Legend below chart — shows ALL families with toggle checkboxes
     const legG = svg
       .append('g')
-      .attr('transform', `translate(${margin.left},${chartH + 6})`);
+      .attr('transform', `translate(${margin.left},${chartH + margin.bottom + 10})`);
 
-    const colW = Math.floor(innerW / Math.min(data.length, 5));
+    const colW = Math.floor(innerW / 5);
+    const selectedKeys = new Set(opts.selectedFamilyKeys);
 
-    data.forEach((d, i) => {
+    allFamilyData.forEach((d, i) => {
       const col = i % 5;
       const row = Math.floor(i / 5);
       const lx = col * colW;
-      const ly = row * 26;
+      const ly = row * 30;
+      const isActive = selectedKeys.has(d.family.key);
 
       const item = legG
         .append('g')
         .attr('transform', `translate(${lx},${ly + 14})`)
-        .style('cursor', 'pointer');
+        .style('cursor', 'pointer')
+        .style('opacity', isActive ? 1 : 0.35);
 
+      // Transparent hit area covering the full cell so the whole row is clickable
+      item
+        .append('rect')
+        .attr('x', 0)
+        .attr('y', -13)
+        .attr('width', colW - 6)
+        .attr('height', 22)
+        .attr('fill', 'transparent');
+
+      // Checkbox background
       item
         .append('rect')
         .attr('width', 12)
         .attr('height', 12)
         .attr('rx', 2)
         .attr('y', -10)
-        .attr('fill', d.family.color);
+        .attr('fill', isActive ? d.family.color : 'none')
+        .attr('stroke', d.family.color)
+        .attr('stroke-width', 1.5);
+
+      // Checkmark when active
+      if (isActive) {
+        item
+          .append('path')
+          .attr('d', 'M2.5,5.5 L5,8 L9.5,3')
+          .attr('fill', 'none')
+          .attr('stroke', 'white')
+          .attr('stroke-width', 1.5)
+          .attr('stroke-linecap', 'round')
+          .attr('stroke-linejoin', 'round')
+          .attr('transform', 'translate(0,-10)');
+      }
 
       item
         .append('text')
@@ -373,6 +402,20 @@ export function createViz01Chart(
         .style('font-size', '11px')
         .text(lang === 'fr' ? d.family.fr : d.family.en);
 
+      // Click to toggle
+      item.on('click', () => {
+        const keys = new Set(opts.selectedFamilyKeys);
+        if (keys.has(d.family.key)) {
+          if (keys.size <= 2) return; // keep at least 2
+          keys.delete(d.family.key);
+        } else {
+          keys.add(d.family.key);
+        }
+        opts = { ...opts, selectedFamilyKeys: [...keys] };
+        render();
+      });
+
+      // Tooltip on hover
       item
         .on('mouseover', (event) => {
           const famName = lang === 'fr' ? d.family.fr : d.family.en;

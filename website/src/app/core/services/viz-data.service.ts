@@ -11,7 +11,7 @@ export class VizDataService {
 
   loadDataset(): Observable<TrackRow[]> {
     if (!this.dataset$) {
-      this.dataset$ = this.http.get('/assets/dataset.csv', { responseType: 'text' }).pipe(
+      this.dataset$ = this.http.get('assets/dataset.csv', { responseType: 'text' }).pipe(
         map((text) => d3.csvParse(text, d3.autoType) as TrackRow[]),
         shareReplay(1),
       );
@@ -20,6 +20,6 @@ export class VizDataService {
   }
 
   loadTopPerformers(): Observable<{ rank: number; name: string }[]> {
-    return this.http.get<{ rank: number; name: string }[]>('/assets/top-12-performers.json');
+    return this.http.get<{ rank: number; name: string }[]>('assets/top-12-performers.json');
   }
 }

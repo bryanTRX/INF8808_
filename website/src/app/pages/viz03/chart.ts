@@ -161,209 +161,128 @@ export function createViz03Chart(
 
     if (data.length === 0) return;
 
-    const margin = { top: 52, right: 160, bottom: 80, left: 52 };
-    const width = Math.max(560, container.clientWidth || 900);
+    // More bottom margin to accommodate 2-line horizontal labels + axis title
+    const margin = { top: 56, right: 24, bottom: 110, left: 56 };
+    const width  = Math.max(560, container.clientWidth || 900);
     const height = Math.max(460, container.clientHeight || 520);
-    const innerW = width - margin.left - margin.right;
-    const innerH = height - margin.top - margin.bottom;
+    const innerW = width  - margin.left - margin.right;
+    const innerH = height - margin.top  - margin.bottom;
 
     // Scales
-    const x = d3
-      .scaleBand<string>()
+    const x = d3.scaleBand<string>()
       .domain(data.map((d) => d.key))
       .range([0, innerW])
-      .padding(0.25);
+      .padding(0.28);
 
     const y = d3.scaleLinear().domain([0, 100]).range([innerH, 0]);
 
-    // Stack using raw percentages (already sum to 100)
-    const stackGen = d3
-      .stack<FamilyStat>()
+    const stackGen = d3.stack<FamilyStat>()
       .keys(['cleanPct', 'explicitPct'])
       .order(d3.stackOrderNone)
       .offset(d3.stackOffsetNone);
 
     const stacked = stackGen(data);
 
-    const svg = d3
-      .select(container)
-      .append('svg')
-      .attr('width', width)
-      .attr('height', height);
+    const svg = d3.select(container).append('svg')
+      .attr('width', width).attr('height', height);
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     // Title
     g.append('text')
       .attr('class', 'chart-title')
-      .attr('x', innerW / 2)
-      .attr('y', -28)
+      .attr('x', innerW / 2).attr('y', -34)
       .attr('text-anchor', 'middle')
-      .text(
-        lang === 'fr'
-          ? 'Proportion de titres explicites vs propres par famille de genres'
-          : 'Explicit vs Clean Track Share by Genre Family',
-      );
+      .text(lang === 'fr'
+        ? 'Proportion de titres explicites vs propres par famille de genres'
+        : 'Explicit vs Clean Track Share by Genre Family');
+
+    // Inline legend (top-right, compact)
+    const legItems = [
+      { color: COLOR_CLEAN,    label: lang === 'fr' ? 'Propre'    : 'Clean'    },
+      { color: COLOR_EXPLICIT, label: lang === 'fr' ? 'Explicite' : 'Explicit' },
+    ];
+    const legG = g.append('g').attr('transform', `translate(${innerW - 130}, -28)`);
+    legItems.forEach(({ color, label }, i) => {
+      const row = legG.append('g').attr('transform', `translate(${i * 68}, 0)`);
+      row.append('rect').attr('width', 11).attr('height', 11).attr('rx', 2)
+        .attr('fill', color).attr('opacity', 0.88);
+      row.append('text').attr('class', 'legend-label').attr('x', 16).attr('y', 9)
+        .style('font-size', '10.5px').text(label);
+    });
 
     // Grid
-    g.append('g')
-      .attr('class', 'grid')
-      .selectAll('line')
-      .data(y.ticks(5))
-      .join('line')
-      .attr('x1', 0)
-      .attr('x2', innerW)
-      .attr('y1', (v) => y(v))
-      .attr('y2', (v) => y(v))
-      .attr('stroke', theme.border)
-      .attr('stroke-opacity', 0.4);
+    g.append('g').attr('class', 'grid')
+      .selectAll('line').data(y.ticks(5)).join('line')
+      .attr('x1', 0).attr('x2', innerW)
+      .attr('y1', (v) => y(v)).attr('y2', (v) => y(v))
+      .attr('stroke', theme.border).attr('stroke-opacity', 0.4);
 
     // Y axis
-    g.append('g')
-      .attr('class', 'axis')
+    g.append('g').attr('class', 'axis')
       .call(d3.axisLeft(y).ticks(5).tickFormat((v) => `${v}%`));
 
-    g.append('text')
-      .attr('class', 'axis-label')
+    g.append('text').attr('class', 'axis-label')
       .attr('transform', 'rotate(-90)')
-      .attr('x', -innerH / 2)
-      .attr('y', -40)
+      .attr('x', -innerH / 2).attr('y', -42)
       .attr('text-anchor', 'middle')
       .text(lang === 'fr' ? 'Proportion (%)' : 'Proportion (%)');
 
-    // X axis — family names (shortened if needed)
-    const truncate = (s: string) => (s.length > 14 ? s.slice(0, 14) + '…' : s);
-
-    g.append('g')
-      .attr('class', 'axis')
+    // X axis ticks (no default text — we draw custom 2-line labels below)
+    g.append('g').attr('class', 'axis')
       .attr('transform', `translate(0,${innerH})`)
-      .call(
-        d3
-          .axisBottom(x)
-          .tickSizeOuter(0)
-          .tickSizeInner(0)
-          .tickPadding(8)
-          .tickFormat((key) => {
-            const d = data.find((f) => f.key === key);
-            if (!d) return key;
-            return truncate(lang === 'fr' ? d.fr : d.en);
-          }),
-      )
-      .selectAll('text')
-      .attr('transform', 'rotate(-35)')
-      .attr('text-anchor', 'end')
-      .attr('dx', '-0.4em')
-      .attr('dy', '0.2em')
-      .style('font-size', '11px');
+      .call(d3.axisBottom(x).tickSizeOuter(0).tickSizeInner(4).tickFormat(() => ''));
 
-    // X axis title
-    svg
-      .append('text')
-      .attr('class', 'axis-label')
-      .attr('x', margin.left + innerW / 2)
-      .attr('y', height - 8)
+    // Custom 2-line horizontal labels under each bar
+    data.forEach((d) => {
+      const cx = x(d.key)! + x.bandwidth() / 2;
+      const fullName = lang === 'fr' ? d.fr : d.en;
+      // Split on ' / ' to get two lines; if no '/', just one line
+      const parts = fullName.includes(' / ') ? fullName.split(' / ') : [fullName];
+
+      const labelG = g.append('g').attr('transform', `translate(${cx}, ${innerH + 10})`);
+      parts.forEach((part, i) => {
+        labelG.append('text')
+          .attr('y', i * 14)
+          .attr('text-anchor', 'middle')
+          .attr('class', 'axis-label')
+          .style('font-size', '10.5px')
+          .style('fill', theme.textSecondary)
+          .text(part);
+      });
+    });
+
+    // X axis title — below the labels
+    g.append('text').attr('class', 'axis-label')
+      .attr('x', innerW / 2)
+      .attr('y', innerH + 82)
       .attr('text-anchor', 'middle')
-      .style('font-size', '12px')
-      .style('font-weight', '600')
+      .style('font-size', '11.5px').style('font-weight', '600')
       .text(lang === 'fr' ? 'Famille de genres' : 'Genre Family');
 
     // Stacked bars
-    const segmentColors: Record<string, string> = {
-      cleanPct: COLOR_CLEAN,
-      explicitPct: COLOR_EXPLICIT,
-    };
-    const segmentKeys: Record<string, 'clean' | 'explicit'> = {
-      cleanPct: 'clean',
-      explicitPct: 'explicit',
-    };
+    const segmentColors: Record<string, string> = { cleanPct: COLOR_CLEAN, explicitPct: COLOR_EXPLICIT };
+    const segmentKeys:   Record<string, 'clean' | 'explicit'> = { cleanPct: 'clean', explicitPct: 'explicit' };
 
     stacked.forEach((series) => {
-      const segKey = segmentKeys[series.key] ?? 'clean';
+      const segKey   = segmentKeys[series.key]   ?? 'clean';
       const fillColor = segmentColors[series.key] ?? COLOR_CLEAN;
 
       g.selectAll<SVGRectElement, d3.SeriesPoint<FamilyStat>>(`.bar-${series.key}`)
-        .data(series)
-        .join('rect')
+        .data(series).join('rect')
         .attr('class', `bar-${series.key}`)
         .attr('x', (d) => x(d.data.key)!)
         .attr('width', x.bandwidth())
         .attr('y', (d) => y(d[1]))
         .attr('height', (d) => Math.max(0, y(d[0]) - y(d[1])))
-        .attr('fill', fillColor)
-        .attr('opacity', 0.88)
-        .attr('rx', series.key === 'cleanPct' ? 0 : 3)
+        .attr('fill', fillColor).attr('opacity', 0.88)
+        .attr('rx', series.key === 'explicitPct' ? 3 : 0)
         .on('mouseover', function (event, d) {
           d3.select(this).attr('opacity', 1);
           tip.show(event, makeTooltip(d.data, segKey, lang));
         })
         .on('mousemove', (event) => tip.move(event))
-        .on('mouseout', function () {
-          d3.select(this).attr('opacity', 0.88);
-          tip.hide();
-        });
-    });
-
-    // Family color dot on each bar (top of bar)
-    data.forEach((d) => {
-      const xPos = x(d.key)! + x.bandwidth() / 2;
-      g.append('circle')
-        .attr('cx', xPos)
-        .attr('cy', y(100) - 8)
-        .attr('r', 4)
-        .attr('fill', d.color)
-        .attr('stroke', theme.panel)
-        .attr('stroke-width', 1.5)
-        .attr('pointer-events', 'none');
-    });
-
-    // Legend (right side)
-    const legendX = innerW + 20;
-    const legG = g.append('g').attr('transform', `translate(${legendX},0)`);
-
-    legG
-      .append('text')
-      .attr('class', 'axis-label')
-      .style('font-weight', '700')
-      .style('font-size', '11px')
-      .text(lang === 'fr' ? 'Contenu' : 'Content');
-
-    const legendItems = [
-      { color: COLOR_CLEAN, label: lang === 'fr' ? 'Propre' : 'Clean' },
-      { color: COLOR_EXPLICIT, label: lang === 'fr' ? 'Explicite' : 'Explicit' },
-    ];
-
-    legendItems.forEach(({ color, label }, i) => {
-      const row = legG.append('g').attr('transform', `translate(0,${22 + i * 26})`);
-      row.append('rect').attr('width', 14).attr('height', 14).attr('rx', 2).attr('fill', color).attr('opacity', 0.88);
-      row.append('text').attr('class', 'legend-label').attr('x', 22).attr('y', 11).text(label);
-    });
-
-    // Separator between legend sections
-    legG.append('line')
-      .attr('x1', 0).attr('x2', 120)
-      .attr('y1', 82).attr('y2', 82)
-      .attr('stroke', theme.border).attr('stroke-opacity', 0.5);
-
-    legG
-      .append('text')
-      .attr('class', 'axis-label')
-      .attr('y', 98)
-      .style('font-weight', '700')
-      .style('font-size', '11px')
-      .text(lang === 'fr' ? 'Famille' : 'Family');
-
-    GENRE_FAMILIES.forEach((fam, i) => {
-      const inData = data.find((d) => d.key === fam.key);
-      if (!inData) return;
-      const row = legG.append('g').attr('transform', `translate(0,${112 + i * 20})`);
-      row.append('circle').attr('cx', 6).attr('cy', 4).attr('r', 5).attr('fill', fam.color);
-      row
-        .append('text')
-        .attr('class', 'legend-label')
-        .attr('x', 18)
-        .attr('y', 8)
-        .style('font-size', '10px')
-        .text(lang === 'fr' ? fam.fr : fam.en);
+        .on('mouseout', function () { d3.select(this).attr('opacity', 0.88); tip.hide(); });
     });
   }
 

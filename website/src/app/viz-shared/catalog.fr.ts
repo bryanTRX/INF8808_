@@ -22,7 +22,7 @@ export const VIZ_CATALOG_FR: VizEntry[] = [
   {
     id: 2,
     anchor: 'viz-2',
-    title: 'Durée des morceaux par genre',
+    title: 'Durée par genre',
     subtitle: 'Distribution des durées selon les familles de genres',
     source: 'viz-2 (Plotly → D3)',
     chapter: 'Chapitre 02 — Quelle est la durée d’une chanson ?',
@@ -33,7 +33,7 @@ export const VIZ_CATALOG_FR: VizEntry[] = [
   {
     id: 3,
     anchor: 'viz-3',
-    title: 'Contenu explicite par genre',
+    title: 'Genres explicites',
     subtitle: 'Barres empilées à 100 %',
     source: 'viz-3',
     chapter: 'Chapitre 03 — Paroles et contenu',
@@ -110,7 +110,7 @@ export const VIZ_CATALOG_FR: VizEntry[] = [
   {
     id: 10,
     anchor: 'viz-10',
-    title: 'Tableau de bord des artistes',
+    title: 'Profils des artistes',
     subtitle: 'Profils radar des 12 artistes les plus populaires',
     source: 'viz-10',
     chapter: 'Chapitre 10 — Des visages dans les données',

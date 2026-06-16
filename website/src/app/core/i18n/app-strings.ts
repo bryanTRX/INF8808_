@@ -38,7 +38,7 @@ export function appStrings(lang: Lang): AppStrings {
       epilogueEyebrow: 'Fin de la visite',
       epilogueTitle: 'Des mesures aux émotions',
       epilogueBody:
-        'Les chiffres ne remplacent jamais l’émotion d’une chanson, mais ils peuvent révéler les motifs que nous ressentons sans les nommer. Les genres se taillent des territoires sonores, la popularité récompense certaines qualités plus que d’autres, et chaque artiste laisse une empreinte mesurable. C’est l’histoire que raconte ce jeu de données — un graphique à la fois.',
+        'Les chiffres ne remplacent jamais l’émotion d’une chanson, mais ils peuvent révéler les motifs que nous ressentons. Les genres suivent des motifs, la popularité récompense certaines qualités plus que d’autres, et chaque artiste laisse une empreinte.',
     };
   }
 
@@ -59,6 +59,6 @@ export function appStrings(lang: Lang): AppStrings {
     epilogueEyebrow: 'End of tour',
     epilogueTitle: 'From features to feeling',
     epilogueBody:
-      'Numbers never replace the emotion of a song, but they can reveal the patterns we feel without naming. Genres carve out territories in sound, popularity rewards some traits more than others, and every artist leaves a measurable signature. That is the story this dataset tells — one chart at a time.',
+      'Numbers never replace the emotion of a song, but they can reveal the patterns we feel. Genres follow patterns, popularity rewards some traits more than others, and every artist leaves a signature.',
   };
 }

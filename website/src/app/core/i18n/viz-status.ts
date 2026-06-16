@@ -15,8 +15,8 @@ export function vizStrings(lang: Lang) {
   return {
     loading: 'Loading…',
     loadedTracks: (n: number) => `Showing ${n.toLocaleString()} tracks`,
-    loadedReady: (n: number) => `Ready — ${n.toLocaleString()} tracks loaded`,
-    loadedArtists: (n: number) => `Ready — ${n} artist profiles`,
+    loadedReady: (n: number) => `Showing ${n.toLocaleString()} tracks`,
+    loadedArtists: (n: number) => `Showing ${n} artist profiles`,
     loadError: 'Failed to load dataset',
     chartLoading: 'Loading chart data…',
   };

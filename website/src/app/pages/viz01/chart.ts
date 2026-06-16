@@ -209,8 +209,8 @@ export function createViz01Chart(
       .attr('text-anchor', 'middle')
       .text(
         lang === 'fr'
-          ? `Profil audio moyen par famille de genres — ${d3.format(',')(totalTracks)} titres`
-          : `Average audio profile by genre family — ${d3.format(',')(totalTracks)} tracks`,
+          ? `Profil audio moyen par famille de genres`
+          : `Average Audio Profile by Genre Family`,
       );
 
     // Scales

@@ -28,6 +28,6 @@ export class LangService {
     } catch {
       // ignore
     }
-    return 'fr';
+    return 'en';
   }
 }

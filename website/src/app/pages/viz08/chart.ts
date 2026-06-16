@@ -118,14 +118,14 @@ const L = (lang: Lang) => lang === 'fr' ? {
   labels: FEATURE_LABELS_FR,
   axisY: 'Proportion de titres (%)',
   axisX: 'Niveau de popularité',
-  titlePrefix: 'Anatomie d\'un hit :',
+  titlePrefix: '',
   tipTracks: 'Titres',
 } : {
   config: FEATURE_CONFIG_EN,
   labels: FEATURE_LABELS_EN,
   axisY: 'Percentage of Tracks (%)',
   axisX: 'Popularity Tier',
-  titlePrefix: 'The Anatomy of a Hit:',
+  titlePrefix: '',
   tipTracks: 'Tracks',
 };
 

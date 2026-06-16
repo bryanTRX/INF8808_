@@ -46,7 +46,7 @@ export const VIZ_CATALOG: VizEntry[] = [
   {
     id: 3,
     anchor: 'viz-3',
-    title: 'Explicit vs Clean Genres',
+    title: 'Explicit vs Clean',
     subtitle: '100% stacked bars by genre family',
     source: 'viz-3',
     chapter: 'Chapter 03 — Lyrics and lines',
@@ -112,7 +112,7 @@ export const VIZ_CATALOG: VizEntry[] = [
   {
     id: 9,
     anchor: 'viz-9',
-    title: 'Density Heatmaps',
+    title: 'Heatmaps trends',
     subtitle: '2D feature density plots',
     source: 'viz-9 (Plotly → D3)',
     chapter: 'Chapter 09 — Where the crowd gathers',

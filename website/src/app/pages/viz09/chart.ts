@@ -15,14 +15,14 @@ type ModeDef = {
 
 const MODES_EN: Record<HeatmapMode, ModeDef> = {
   'energy-loudness': {
-    title: 'Where Energy Meets Loudness — Track Density across All Genres',
+    title: 'Track Density of Energy and Loudness',
     xKey: 'energy', yKey: 'loudness',
     xLabel: 'Energy Level (0.0 to 1.0)', yLabel: 'Loudness (Decibels)',
     xDomain: [0, 1], yDomain: [-60, 0],
     color: d3.interpolateViridis, btnLabel: 'Energy / Loudness',
   },
   'speech-dance': {
-    title: 'Vocal Presence and Danceability — Track Density across All Genres',
+    title: 'Track Density of Speechiness and Danceability',
     xKey: 'speechiness', yKey: 'danceability',
     xLabel: 'Speechiness Level (0.0 to 1.0)', yLabel: 'Danceability Score (0.0 to 1.0)',
     xDomain: [0, 1], yDomain: [0, 1],

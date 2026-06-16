@@ -14,20 +14,20 @@ export const MAJOR_GENRES = [
 
 export type MajorGenre = (typeof MAJOR_GENRES)[number];
 
-// Map each genre to a color consistent with the family palette
+// 12 maximally distinct colors — one unique hue per genre
 const GENRE_COLOR_MAP: Record<MajorGenre, string> = {
-  pop:        '#4e9af1', // Pop family
-  rock:       '#e05252', // Rock/Metal
-  'hip-hop':  '#f59e0b', // Hip-hop/Rap
-  electronic: '#a855f7', // Electronic/Dance
-  dance:      '#9333ea', // Electronic/Dance (darker)
-  indie:      '#60a5fa', // Pop adjacent
-  'r&b':      '#ec4899', // R&B/Soul
-  country:    '#65a30d', // Folk/Acoustic
-  jazz:       '#0891b2', // Jazz/Blues
-  classical:  '#10b981', // Classical/Instrumental
-  latin:      '#f97316', // Latin/World
-  metal:      '#b91c1c', // Rock/Metal (darker)
+  pop:        '#4285f4', // blue
+  rock:       '#e05252', // red
+  'hip-hop':  '#f59e0b', // amber
+  electronic: '#8b5cf6', // violet
+  dance:      '#06b6d4', // cyan
+  indie:      '#f97316', // orange
+  'r&b':      '#ec4899', // hot pink
+  country:    '#84cc16', // lime green
+  jazz:       '#0d9488', // teal
+  classical:  '#b45309', // bronze
+  latin:      '#e879f9', // fuchsia
+  metal:      '#64748b', // slate
 };
 
 const GENRE_LABELS_FR: Record<MajorGenre, string> = {

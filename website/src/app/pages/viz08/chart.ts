@@ -12,6 +12,7 @@ interface CategoryDef {
   key: string;
   label: string;
   color: string;
+  desc: string;
   classify: (v: number) => boolean;
 }
 
@@ -21,41 +22,41 @@ const FEATURE_CONFIG_EN: FeatureConfig = {
   valence: {
     title: 'Valence Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'low', label: 'Sad/Angry (Low)', color: '#f4a582', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Neutral (Medium)', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Happy/Upbeat (High)', color: '#8b1a0e', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Sad/Angry (Low)', color: '#f4a582', desc: 'Score below 0.33 — conveys sadness, tension or negative emotion.', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Neutral (Medium)', color: '#d6604d', desc: 'Score between 0.33 and 0.66 — mixed or ambiguous emotional tone.', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Happy/Upbeat (High)', color: '#8b1a0e', desc: 'Score above 0.66 — conveys joy, euphoria or positivity.', classify: (v) => v > 0.66 },
     ],
   },
   instrumentalness: {
     title: 'Instrumentalness Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'vocal', label: 'Mostly Vocal', color: '#f4a582', classify: (v) => v <= 0.1 },
-      { key: 'mixed', label: 'Mixed', color: '#d6604d', classify: (v) => v > 0.1 && v <= 0.8 },
-      { key: 'inst', label: 'Instrumental', color: '#8b1a0e', classify: (v) => v > 0.8 },
+      { key: 'vocal', label: 'Mostly Vocal', color: '#f4a582', desc: 'Score below 0.1 — track is dominated by singing or speech.', classify: (v) => v <= 0.1 },
+      { key: 'mixed', label: 'Mixed', color: '#d6604d', desc: 'Score between 0.1 and 0.8 — blend of vocals and instruments.', classify: (v) => v > 0.1 && v <= 0.8 },
+      { key: 'inst', label: 'Instrumental', color: '#8b1a0e', desc: 'Score above 0.8 — little to no vocal content.', classify: (v) => v > 0.8 },
     ],
   },
   speechiness: {
     title: 'Speechiness Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'low', label: 'Low Speech', color: '#f4a582', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Medium Speech', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'High Speech', color: '#8b1a0e', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Low Speech', color: '#f4a582', desc: 'Score below 0.33 — primarily music with few spoken words.', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Medium Speech', color: '#d6604d', desc: 'Score between 0.33 and 0.66 — may include rap or narrative content.', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'High Speech', color: '#8b1a0e', desc: 'Score above 0.66 — heavily spoken or rap-heavy content.', classify: (v) => v > 0.66 },
     ],
   },
   danceability: {
     title: 'Danceability Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'low', label: 'Low Dance', color: '#f4a582', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Medium Dance', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'High Dance', color: '#8b1a0e', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Low Dance', color: '#f4a582', desc: 'Score below 0.33 — not well-suited for dancing.', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Medium Dance', color: '#d6604d', desc: 'Score between 0.33 and 0.66 — moderately rhythmic and groove-able.', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'High Dance', color: '#8b1a0e', desc: 'Score above 0.66 — highly rhythmic and dance-friendly.', classify: (v) => v > 0.66 },
     ],
   },
   energy: {
     title: 'Energy Breakdown Across Popularity Tiers',
     categories: [
-      { key: 'low', label: 'Low Energy', color: '#f4a582', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Medium Energy', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'High Energy', color: '#8b1a0e', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Low Energy', color: '#f4a582', desc: 'Score below 0.33 — calm, soft or acoustic feel.', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Medium Energy', color: '#d6604d', desc: 'Score between 0.33 and 0.66 — moderate intensity and drive.', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'High Energy', color: '#8b1a0e', desc: 'Score above 0.66 — loud, fast and intense.', classify: (v) => v > 0.66 },
     ],
   },
 };
@@ -64,41 +65,41 @@ const FEATURE_CONFIG_FR: FeatureConfig = {
   valence: {
     title: 'Répartition de la valence par niveau de popularité',
     categories: [
-      { key: 'low', label: 'Triste/Négatif (Bas)', color: '#f4a582', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Neutre (Moyen)', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Joyeux/Positif (Haut)', color: '#8b1a0e', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Triste/Négatif (Bas)', color: '#f4a582', desc: 'Score inférieur à 0,33 — évoque la tristesse, la tension ou une émotion négative.', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Neutre (Moyen)', color: '#d6604d', desc: 'Score entre 0,33 et 0,66 — ton émotionnel mixte ou ambigu.', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Joyeux/Positif (Haut)', color: '#8b1a0e', desc: 'Score supérieur à 0,66 — évoque la joie, l\'euphorie ou la positivité.', classify: (v) => v > 0.66 },
     ],
   },
   instrumentalness: {
     title: 'Répartition de l\'instrumental par niveau de popularité',
     categories: [
-      { key: 'vocal', label: 'Très vocal', color: '#f4a582', classify: (v) => v <= 0.1 },
-      { key: 'mixed', label: 'Mixte', color: '#d6604d', classify: (v) => v > 0.1 && v <= 0.8 },
-      { key: 'inst', label: 'Instrumental', color: '#8b1a0e', classify: (v) => v > 0.8 },
+      { key: 'vocal', label: 'Très vocal', color: '#f4a582', desc: 'Score inférieur à 0,1 — le titre est dominé par le chant ou la parole.', classify: (v) => v <= 0.1 },
+      { key: 'mixed', label: 'Mixte', color: '#d6604d', desc: 'Score entre 0,1 et 0,8 — mélange de voix et d\'instruments.', classify: (v) => v > 0.1 && v <= 0.8 },
+      { key: 'inst', label: 'Instrumental', color: '#8b1a0e', desc: 'Score supérieur à 0,8 — peu ou pas de voix.', classify: (v) => v > 0.8 },
     ],
   },
   speechiness: {
     title: 'Répartition de la parole par niveau de popularité',
     categories: [
-      { key: 'low', label: 'Peu de parole', color: '#f4a582', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Parole modérée', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Très parlé', color: '#8b1a0e', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Peu de parole', color: '#f4a582', desc: 'Score inférieur à 0,33 — principalement de la musique avec peu de mots parlés.', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Parole modérée', color: '#d6604d', desc: 'Score entre 0,33 et 0,66 — peut inclure du rap ou un contenu narratif.', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Très parlé', color: '#8b1a0e', desc: 'Score supérieur à 0,66 — contenu très parlé ou rap intense.', classify: (v) => v > 0.66 },
     ],
   },
   danceability: {
     title: 'Répartition de la dansabilité par niveau de popularité',
     categories: [
-      { key: 'low', label: 'Peu dansable', color: '#f4a582', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Moyennement dansable', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Très dansable', color: '#8b1a0e', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Peu dansable', color: '#f4a582', desc: 'Score inférieur à 0,33 — peu adapté à la danse.', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Moyennement dansable', color: '#d6604d', desc: 'Score entre 0,33 et 0,66 — rythme modéré, partiellement entraînant.', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Très dansable', color: '#8b1a0e', desc: 'Score supérieur à 0,66 — très rythmique et idéal pour danser.', classify: (v) => v > 0.66 },
     ],
   },
   energy: {
     title: 'Répartition de l\'énergie par niveau de popularité',
     categories: [
-      { key: 'low', label: 'Faible énergie', color: '#f4a582', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Énergie modérée', color: '#d6604d', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Haute énergie', color: '#8b1a0e', classify: (v) => v > 0.66 },
+      { key: 'low', label: 'Faible énergie', color: '#f4a582', desc: 'Score inférieur à 0,33 — ambiance calme, douce ou acoustique.', classify: (v) => v <= 0.33 },
+      { key: 'mid', label: 'Énergie modérée', color: '#d6604d', desc: 'Score entre 0,33 et 0,66 — intensité et dynamique modérées.', classify: (v) => v > 0.33 && v <= 0.66 },
+      { key: 'high', label: 'Haute énergie', color: '#8b1a0e', desc: 'Score supérieur à 0,66 — fort, rapide et intense.', classify: (v) => v > 0.66 },
     ],
   },
 };
@@ -245,9 +246,21 @@ export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: 
 
     const legend = svg.append('g').attr('transform', `translate(${width - margin.right + 8},${margin.top})`);
     config.categories.forEach((cat, i) => {
-      const row = legend.append('g').attr('transform', `translate(0,${i * 22})`);
+      const row = legend.append('g').attr('transform', `translate(0,${i * 22})`).style('cursor', 'default');
+      // Transparent hit area
+      row.append('rect').attr('width', margin.right - 12).attr('height', 20).attr('y', -3).attr('fill', 'transparent');
       row.append('rect').attr('width', 14).attr('height', 14).attr('fill', cat.color);
       row.append('text').attr('class', 'legend-label').attr('x', 20).attr('y', 11).attr('font-size', 11).text(cat.label);
+      row.on('mouseover', (event) => {
+        tip.show(event,
+          `<div style="margin-bottom:0.3rem;display:flex;align-items:center;gap:0.5rem">
+            <span style="width:10px;height:10px;border-radius:2px;background:${cat.color};display:inline-block;flex-shrink:0"></span>
+            <strong>${cat.label}</strong>
+          </div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);max-width:220px;line-height:1.5">${cat.desc}</div>`);
+      })
+      .on('mousemove', (event) => tip.move(event))
+      .on('mouseout', () => tip.hide());
     });
   }
 

@@ -13,7 +13,7 @@
         {{ langService.lang() === 'fr' ? '↓ Décroissant' : '↓ Descending' }}
       </button>
       <button type="button" [class.active]="sortOrder === 'alpha'" (click)="setSortOrder('alpha')">
-        A – Z
+        {{ langService.lang() === 'fr' ? 'Alphabétique' : 'A – Z' }}
       </button>
     </div>
   </div>

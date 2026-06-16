@@ -77,7 +77,6 @@ import { Viz10Component } from '../viz10/component';
       <app-viz-chapter [entry]="catalog()[9]" />
       <app-viz10 />
     </div>
-
     <footer class="story-epilogue">
       <p class="epilogue-eyebrow">{{ strings().epilogueEyebrow }}</p>
       <h2>{{ strings().epilogueTitle }}</h2>

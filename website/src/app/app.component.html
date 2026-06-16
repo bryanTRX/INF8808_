@@ -2,11 +2,11 @@
   <aside class="sidebar">
     <a href="#" class="brand" (click)="scrollTo('dashboard', $event)">
       <span class="brand-icon" aria-hidden="true">
-        <img src="assets/logo.png" alt="MusicInsights logo" class="brand-logo" />
+        <img src="favicon.png" [attr.alt]="strings().logoAlt" class="brand-logo" />
       </span>
       <span class="brand-text">
         <span class="brand-title">MusicInsights</span>
-        <span class="brand-eyebrow">INF8808E Project</span>
+        <span class="brand-eyebrow">{{ strings().projectLabel }}</span>
       </span>
     </a>
 
@@ -24,13 +24,6 @@
       }
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="user-avatar" aria-hidden="true">NM</div>
-      <div class="user-info">
-        <span class="user-name">{{ strings().userName }}</span>
-        <span class="user-plan">{{ strings().userPlan }}</span>
-      </div>
-    </div>
   </aside>
 
   <div class="app-body">

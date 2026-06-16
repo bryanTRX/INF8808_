@@ -227,7 +227,7 @@ export function createViz03Chart(
       .attr('transform', 'rotate(-90)')
       .attr('x', -innerH / 2).attr('y', -42)
       .attr('text-anchor', 'middle')
-      .text(lang === 'fr' ? 'Proportion (%)' : 'Proportion (%)');
+      .text(lang === 'fr' ? 'Proportion (%)' : 'Share (%)');
 
     // X axis ticks (no default text — we draw custom 2-line labels below)
     g.append('g').attr('class', 'axis')

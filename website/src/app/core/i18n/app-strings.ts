@@ -10,6 +10,8 @@ export interface AppStrings {
   langLabel: string;
   userName: string;
   userPlan: string;
+  logoAlt: string;
+  projectLabel: string;
   chapterInsight: string;
   chapterGuide: string;
   epilogueEyebrow: string;
@@ -29,6 +31,8 @@ export function appStrings(lang: Lang): AppStrings {
       langLabel: 'Changer la langue',
       userName: 'Analytique musicale',
       userPlan: 'Jeu de données Spotify',
+      logoAlt: 'Logo MusicInsights',
+      projectLabel: 'Projet INF8808E',
       chapterInsight: 'Idée clé',
       chapterGuide: 'Comment lire ce graphique',
       epilogueEyebrow: 'Fin de la visite',
@@ -48,6 +52,8 @@ export function appStrings(lang: Lang): AppStrings {
     langLabel: 'Change language',
     userName: 'Music Analytics',
     userPlan: 'Spotify Dataset',
+    logoAlt: 'MusicInsights logo',
+    projectLabel: 'INF8808E Project',
     chapterInsight: 'Key insight',
     chapterGuide: 'How to read this chart',
     epilogueEyebrow: 'End of tour',

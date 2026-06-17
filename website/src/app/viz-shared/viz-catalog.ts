@@ -95,7 +95,7 @@ export const VIZ_CATALOG: VizEntry[] = [
     source: 'viz-7',
     chapter: 'Chapter 07 — The sweet time range',
     narrative: 'The attention spans is falling, and a same question can be raised: is there an ideal song length? Tracks are grouped into 30-second duration windows and each bar shows the average popularity within that window.',
-    insight: 'Unsurprisingly, the three-to-five minute range is the most popular, as a lot of known hits fall into that range. The popularity sharplydrops for shorter tracks than 1 minute 30 seconds, but is surprisinly high for tracks longer than 5 minutes.',
+    insight: 'Unsurprisingly, the three-to-five minute range is the most popular, as a lot of known hits fall into that range. The popularity sharply drops for shorter tracks than 1 minute 30 seconds, but is surprisingly high for tracks longer than 5 minutes.',
     readingGuide: 'Hover any bar to see the average popularity and track count for that duration range. The dashed line marks the overall dataset average for quick comparison.',
   },
   {

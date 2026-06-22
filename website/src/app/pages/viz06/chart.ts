@@ -87,7 +87,6 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
 
       const facet = svg.append('g').attr('transform', `translate(${idx * fW + m.left},${m.top})`);
 
-      // Theme-aware facet background
       facet
         .insert('rect', ':first-child')
         .attr('x', -m.left + 4)
@@ -107,7 +106,6 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
         .style('font-weight', '700')
         .text(`${meta.label}  —  ${d3.format(',')(values.length)} ${lbl.tracks}`);
 
-      // Grid
       facet
         .append('g')
         .attr('class', 'grid')
@@ -117,7 +115,6 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
         .attr('stroke-opacity', 0.4);
       facet.select('.grid .domain').remove();
 
-      // Axes
       facet.append('g').attr('class', 'axis').attr('transform', `translate(0,${iH})`).call(d3.axisBottom(xSc).ticks(5));
       facet.append('g').attr('class', 'axis').call(d3.axisLeft(ySc).ticks(5));
 
@@ -126,7 +123,6 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
       }
       facet.append('text').attr('class', 'axis-label').attr('x', iW / 2).attr('y', iH + 46).attr('text-anchor', 'middle').text(lbl.axisX);
 
-      // Points
       facet
         .selectAll<SVGCircleElement, ParsedTrack>('.point')
         .data(pts, (d) => d.trackId)
@@ -183,7 +179,6 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
           .attr('opacity', 0.8)
           .attr('d', d3.line<{ x: number; y: number }>().x((d) => xSc(d.x)).y((d) => ySc(d.y)).defined((d) => Number.isFinite(d.y)));
 
-        // Pearson r badge
         const rText = `r = ${d3.format('+.2f')(fit.r)}`;
         const bW = rText.length * 7.2 + 10;
         const bg = facet.append('g').attr('transform', `translate(${iW - bW - 2},4)`);
@@ -203,7 +198,6 @@ export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: 
         .attr('opacity', 0.65)
         .attr('d', d3.line<{ x: number; y: number }>().x((d) => xSc(d.x)).y((d) => ySc(d.y)));
 
-      // In-facet legend
       const legY = iH - 38;
       lbl.legend.forEach((label, li) => {
         const lg = facet.append('g').attr('transform', `translate(6,${legY + li * 18})`);

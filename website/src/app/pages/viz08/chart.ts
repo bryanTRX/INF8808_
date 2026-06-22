@@ -193,7 +193,6 @@ export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: 
     const legend = svg.append('g').attr('transform', `translate(${width - margin.right + 8},${margin.top})`);
     config.categories.forEach((cat, i) => {
       const row = legend.append('g').attr('transform', `translate(0,${i * 22})`).style('cursor', 'default');
-      // Transparent hit area
       row.append('rect').attr('width', margin.right - 12).attr('height', 20).attr('y', -3).attr('fill', 'transparent');
       row.append('rect').attr('width', 14).attr('height', 14).attr('fill', cat.color);
       row.append('text').attr('class', 'legend-label').attr('x', 20).attr('y', 11).attr('font-size', 11).text(cat.label);

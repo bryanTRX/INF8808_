@@ -1,11 +1,11 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
-import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 import { createViz09Chart, getModeLabels, HeatmapMode, Viz09Chart } from './chart';
 
@@ -18,10 +18,10 @@ import { createViz09Chart, getModeLabels, HeatmapMode, Viz09Chart } from './char
 export class Viz09Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
   mode: HeatmapMode = 'energy-loudness';
-  readonly langService = inject(LangService);
   readonly loadState = new VizLoadState();
   readonly modeLabels = getModeLabels('en');
 
+  private readonly destroyRef = inject(DestroyRef);
   private dataService = inject(VizDataService);
   private controller?: Viz09Chart;
   private cleanupResize?: () => void;
@@ -29,7 +29,7 @@ export class Viz09Component implements AfterViewInit, OnDestroy {
   private tip = createTooltip();
 
   ngAfterViewInit() {
-    this.dataService.loadDataset().subscribe({
+    this.dataService.loadDataset().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (rows) => {
         deferChartInit(() => {
           this.controller = createViz09Chart(this.chartRef.nativeElement, rows, this.tip, 'en');

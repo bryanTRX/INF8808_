@@ -1,4 +1,5 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -6,7 +7,6 @@ import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
 import { createViz10Chart, Performer, Viz10Chart } from './chart';
-import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
 @Component({
@@ -19,9 +19,9 @@ export class Viz10Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
 
   performers: Performer[] = [];
-  readonly langService = inject(LangService);
   readonly loadState = new VizLoadState('artists');
 
+  private readonly destroyRef = inject(DestroyRef);
   private dataService = inject(VizDataService);
   private controller?: Viz10Chart;
   private cleanupResize?: () => void;
@@ -32,7 +32,7 @@ export class Viz10Component implements AfterViewInit, OnDestroy {
     forkJoin({
       rows: this.dataService.loadDataset(),
       performers: this.dataService.loadTopPerformers(),
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: ({ rows, performers }) => {
         deferChartInit(() => {
           this.performers = performers;

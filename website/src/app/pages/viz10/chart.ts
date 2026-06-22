@@ -226,7 +226,6 @@ export function createViz10Chart(
         .on('mousemove', (event) => tip.move(event))
         .on('mouseleave', () => tip.hide());
 
-      // Mini SVG radar
       const size = 140;
       const r = size / 2 - 18;
       const cx = size / 2, cy = size / 2;
@@ -238,11 +237,9 @@ export function createViz10Chart(
         .style('display', 'block').style('margin', '0 auto');
       const g = svg.append('g').attr('transform', `translate(${cx},${cy})`);
 
-      // Grid circles
       [0.25, 0.5, 0.75, 1].forEach((lvl) => {
         g.append('circle').attr('r', r * lvl).attr('fill', 'none').attr('stroke', theme.border).attr('stroke-width', 0.5);
       });
-      // Axis lines
       RADAR_AXES.forEach((_, i) => {
         g.append('line')
           .attr('x1', 0).attr('y1', 0)
@@ -253,7 +250,6 @@ export function createViz10Chart(
 
       drawRadarShape(g, profile, r, aSlice, color, 1.5, 0.2);
 
-      // Artist name
       card.append('div')
         .style('text-align', 'center')
         .style('font-size', '0.7rem')
@@ -291,13 +287,11 @@ export function createViz10Chart(
       .attr('width', cW).attr('height', cH).attr('viewBox', `0 0 ${cW} ${cH}`);
     const g = svg.append('g').attr('transform', `translate(${cCx},${cCy})`);
 
-    // Grid
     [0.25, 0.5, 0.75, 1].forEach((lvl) => {
       g.append('circle').attr('r', cRadius * lvl).attr('fill', 'none')
         .attr('stroke', theme.border).attr('stroke-width', lvl === 1 ? 1 : 0.5);
     });
 
-    // Axes + labels
     const axisLabels = strings().axes;
     RADAR_AXES.forEach((axis, i) => {
       const ax = cRadius * Math.sin(i * aSliceBig);
@@ -312,14 +306,12 @@ export function createViz10Chart(
         .text(axisLabels[axis.key as keyof typeof axisLabels]);
     });
 
-    // Artist overlays
     selected.forEach((performer) => {
       const profile = getProfile(performer.name);
       if (!profile.count) return;
       const color = ARTIST_COLORS(performer.name);
       const pts = drawRadarShape(g, profile, cRadius, aSliceBig, color, 2, 0.12);
 
-      // Dots with tooltip
       g.selectAll(null).data(pts).join('circle')
         .attr('cx', (d) => cRadius * d.value * Math.sin(d.angle))
         .attr('cy', (d) => -cRadius * d.value * Math.cos(d.angle))

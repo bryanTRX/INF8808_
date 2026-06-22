@@ -64,7 +64,6 @@ export function createViz02Chart(
   initialOpts?: Partial<Viz02Options>,
 ): Viz02Chart {
 
-  // Group durations by genre family
   const famDurations = new Map<string, number[]>();
   const famGenreCounts = new Map<string, Map<string, number>>();
   for (const fam of GENRE_FAMILIES) {
@@ -95,7 +94,6 @@ export function createViz02Chart(
     .filter((v) => Number.isFinite(v) && v > 0);
   const popMedian = d3.median(allPopDurations) ?? 3.53;
 
-  // Build allBoxData (one entry per family)
   const allBoxData: BoxDatum[] = GENRE_FAMILIES
     .map((fam) => {
       const vals = famDurations.get(fam.key) ?? [];
@@ -181,7 +179,6 @@ export function createViz02Chart(
   function render() {
     container.innerHTML = '';
     const data = getVisibleData();
-    const { lang } = opts;
     const theme = getChartTheme();
     if (data.length === 0) return;
 
@@ -210,7 +207,6 @@ export function createViz02Chart(
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Title
     g.append('text')
       .attr('class', 'chart-title')
       .attr('x', innerW / 2)
@@ -246,7 +242,6 @@ export function createViz02Chart(
       .style('font-size', '11px')
       .attr('text-anchor', 'middle');
 
-    // X axis title
     g.append('text').attr('class', 'axis-label')
       .attr('x', innerW / 2)
       .attr('y', innerH + 52)
@@ -268,13 +263,11 @@ export function createViz02Chart(
       .attr('class', 'box-col')
       .attr('transform', (d) => `translate(${x(d.key)! + bw / 2},0)`);
 
-    // Whisker line
     boxG.append('line')
       .attr('x1', 0).attr('x2', 0)
       .attr('y1', (d) => y(d.wMin)).attr('y2', (d) => y(d.wMax))
       .attr('stroke', (d) => d.color).attr('stroke-width', 1.5).attr('opacity', 0.5);
 
-    // Whisker caps
     const capW = bw * 0.3;
     (['wMin', 'wMax'] as const).forEach((which) => {
       boxG.append('line')
@@ -295,7 +288,6 @@ export function createViz02Chart(
         .attr('opacity', 0.35).attr('pointer-events', 'none');
     });
 
-    // IQR box fill (interactive)
     boxG.append('rect')
       .attr('x', -bw * 0.38).attr('width', bw * 0.76)
       .attr('y', (d) => y(d.q3)).attr('height', (d) => Math.max(1, y(d.q1) - y(d.q3)))
@@ -307,7 +299,6 @@ export function createViz02Chart(
       .on('mousemove', (event) => tip.move(event))
       .on('mouseout', function () { d3.select(this).attr('opacity', 0.18); tip.hide(); });
 
-    // IQR box stroke
     boxG.append('rect')
       .attr('x', -bw * 0.38).attr('width', bw * 0.76)
       .attr('y', (d) => y(d.q3)).attr('height', (d) => Math.max(1, y(d.q1) - y(d.q3)))
@@ -315,7 +306,6 @@ export function createViz02Chart(
       .attr('stroke-width', 1.5).attr('rx', 3).attr('opacity', 0.7)
       .attr('pointer-events', 'none');
 
-    // Median line
     boxG.append('line')
       .attr('x1', -bw * 0.38).attr('x2', bw * 0.38)
       .attr('y1', (d) => y(d.median)).attr('y2', (d) => y(d.median))

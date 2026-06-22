@@ -1,4 +1,5 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -6,14 +7,13 @@ import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
 import { createViz05Chart, MAJOR_GENRES, Viz05Chart, Viz05State } from './chart';
+import { VizLoadState } from '../../core/i18n/viz-load-state';
 
 const GENRE_LABELS_EN: Record<string, string> = {
   pop: 'Pop', rock: 'Rock', 'hip-hop': 'Hip-Hop', electronic: 'Electronic',
   dance: 'Dance', indie: 'Indie', 'r&b': 'R&B', country: 'Country',
   jazz: 'Jazz', classical: 'Classical', latin: 'Latin', metal: 'Metal',
 };
-import { LangService } from '../../core/services/lang.service';
-import { VizLoadState } from '../../core/i18n/viz-load-state';
 
 @Component({
   selector: 'app-viz05',
@@ -30,7 +30,7 @@ export class Viz05Component implements AfterViewInit, OnDestroy {
   sharedScales = true;
   readonly loadState = new VizLoadState();
 
-  readonly langService = inject(LangService);
+  private readonly destroyRef = inject(DestroyRef);
   private dataService = inject(VizDataService);
   private controller?: Viz05Chart;
   private cleanupResize?: () => void;
@@ -38,7 +38,7 @@ export class Viz05Component implements AfterViewInit, OnDestroy {
   private tip = createTooltip();
 
   ngAfterViewInit() {
-    this.dataService.loadDataset().subscribe({
+    this.dataService.loadDataset().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (rows) => {
         deferChartInit(() => {
           this.controller = createViz05Chart(this.chartRef.nativeElement, rows, this.tip, 'en');

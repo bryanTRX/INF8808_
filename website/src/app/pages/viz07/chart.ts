@@ -17,7 +17,6 @@ const L = (_lang: Lang) => ({
   tipMedian: 'Median',
   tipCount: 'Tracks',
   tipRank: 'Rank',
-  hoverDefault: 'Hover a bar to see average popularity for that length range.',
 });
 
 export interface DurationBin {
@@ -109,7 +108,6 @@ export function createViz07Chart(
   let hoveredBin: number | null = null;
   const MAX_BINS = 20;
 
-  // Fixed layout constants
   const margin = { top: 28, right: 32, bottom: 52, left: 58 };
   const plotHeight = 380;
   // Each bin gets a fixed pixel width so all bins are always visible via scroll
@@ -153,22 +151,18 @@ export function createViz07Chart(
 
     const gMain = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Y axis
     gMain.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6));
 
-    // Y axis label
     gMain.append('text').attr('class', 'axis-label')
       .attr('transform', 'rotate(-90)')
       .attr('x', -innerHeight / 2).attr('y', -44)
       .attr('text-anchor', 'middle')
       .text(lbl.axisY);
 
-    // Horizontal grid lines
     gMain.append('g').attr('class', 'grid')
       .call(d3.axisLeft(y).ticks(6).tickSize(-innerWidth).tickFormat(() => ''))
       .call((g) => { g.select('.domain').remove(); g.selectAll('line').attr('stroke', theme.border).attr('stroke-opacity', 0.3); });
 
-    // X axis
     gMain.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerHeight})`)
       .call(
         d3.axisBottom(x)
@@ -182,12 +176,10 @@ export function createViz07Chart(
       .attr('dy', '0.1em')
       .style('font-size', '9px');
 
-    // X axis label
     gMain.append('text').attr('class', 'axis-label')
       .attr('x', innerWidth / 2).attr('y', innerHeight + 48)
       .attr('text-anchor', 'middle').text(lbl.axisX);
 
-    // Global average reference line
     gMain.append('line')
       .attr('stroke', theme.muted).attr('stroke-dasharray', '6,5').attr('stroke-width', 1.5)
       .attr('x1', 0).attr('x2', innerWidth)
@@ -198,7 +190,6 @@ export function createViz07Chart(
       .attr('text-anchor', 'end')
       .text(`${lbl.avgLabel} ${overallAvg.toFixed(1)}`);
 
-    // Bars
     const barsLayer = gMain.append('g');
     barsLayer.selectAll('.bar-group').data(data, (d) => (d as DurationBin).bin_start).join('g')
       .attr('class', 'bar-group')
@@ -218,7 +209,6 @@ export function createViz07Chart(
           .text(d.avg_popularity.toFixed(1));
       });
 
-    // Invisible hit targets
     const hitLayer = gMain.append('g');
     hitLayer.selectAll('.bar-hit').data(data, (d) => (d as DurationBin).bin_start).join('rect')
       .attr('fill', 'transparent').attr('cursor', 'pointer')

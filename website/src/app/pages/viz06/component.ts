@@ -1,11 +1,11 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
 import { createViz06Chart, Viz06Chart } from './chart';
-import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
 @Component({
@@ -18,7 +18,7 @@ export class Viz06Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
   readonly loadState = new VizLoadState();
 
-  readonly langService = inject(LangService);
+  private readonly destroyRef = inject(DestroyRef);
   private dataService = inject(VizDataService);
   private controller?: Viz06Chart;
   private cleanupResize?: () => void;
@@ -26,7 +26,7 @@ export class Viz06Component implements AfterViewInit, OnDestroy {
   private tip = createTooltip();
 
   ngAfterViewInit() {
-    this.dataService.loadDataset().subscribe({
+    this.dataService.loadDataset().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (rows) => {
         deferChartInit(() => {
           this.controller = createViz06Chart(this.chartRef.nativeElement, rows, this.tip, 'en');

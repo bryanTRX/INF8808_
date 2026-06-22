@@ -164,7 +164,6 @@ export function createViz03Chart(
     const innerW = width  - margin.left - margin.right;
     const innerH = height - margin.top  - margin.bottom;
 
-    // Scales
     const x = d3.scaleBand<string>()
       .domain(data.map((d) => d.key))
       .range([0, innerW])
@@ -185,14 +184,12 @@ export function createViz03Chart(
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Title
     g.append('text')
       .attr('class', 'chart-title')
       .attr('x', innerW / 2).attr('y', -34)
       .attr('text-anchor', 'middle')
       .text('Explicit vs Clean Track Share by Genre Family');
 
-    // Inline legend (top-right, compact)
     const legItems = [
       { color: COLOR_CLEAN,    label: 'Clean'    },
       { color: COLOR_EXPLICIT, label: 'Explicit' },
@@ -206,14 +203,12 @@ export function createViz03Chart(
         .style('font-size', '10.5px').text(label);
     });
 
-    // Grid
     g.append('g').attr('class', 'grid')
       .selectAll('line').data(y.ticks(5)).join('line')
       .attr('x1', 0).attr('x2', innerW)
       .attr('y1', (v) => y(v)).attr('y2', (v) => y(v))
       .attr('stroke', theme.border).attr('stroke-opacity', 0.4);
 
-    // Y axis
     g.append('g').attr('class', 'axis')
       .call(d3.axisLeft(y).ticks(5).tickFormat((v) => `${v}%`));
 
@@ -228,7 +223,6 @@ export function createViz03Chart(
       .attr('transform', `translate(0,${innerH})`)
       .call(d3.axisBottom(x).tickSizeOuter(0).tickSizeInner(4).tickFormat(() => ''));
 
-    // Custom 2-line horizontal labels under each bar
     data.forEach((d) => {
       const cx = x(d.key)! + x.bandwidth() / 2;
       const fullName = d.en;
@@ -247,7 +241,6 @@ export function createViz03Chart(
       });
     });
 
-    // X axis title — below the labels
     g.append('text').attr('class', 'axis-label')
       .attr('x', innerW / 2)
       .attr('y', innerH + 82)
@@ -255,7 +248,6 @@ export function createViz03Chart(
       .style('font-size', '11.5px').style('font-weight', '600')
       .text('Genre Family');
 
-    // Stacked bars
     const segmentColors: Record<string, string> = { cleanPct: COLOR_CLEAN, explicitPct: COLOR_EXPLICIT };
     const segmentKeys:   Record<string, 'clean' | 'explicit'> = { cleanPct: 'clean', explicitPct: 'explicit' };
 

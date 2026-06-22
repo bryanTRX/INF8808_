@@ -131,11 +131,3 @@ export const VIZ_CATALOG: VizEntry[] = [
     readingGuide: 'Hover a mini card to see exact values. Click cards to toggle artists in the comparison radar.',
   },
 ];
-
-export function getStoryPrologue(_lang: Lang) {
-  return STORY_PROLOGUE;
-}
-
-export function getVizCatalog(_lang: Lang): VizEntry[] {
-  return VIZ_CATALOG;
-}

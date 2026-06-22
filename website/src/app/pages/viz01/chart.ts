@@ -179,7 +179,6 @@ export function createViz01Chart(
 
     if (dims.length < 2 || data.length === 0) return;
 
-    const totalTracks = allFamilyData.reduce((s, d) => s + d.trackCount, 0);
     const width = Math.max(580, container.clientWidth || 900);
 
     const legendRows = Math.ceil(allFamilyData.length / 5);
@@ -200,7 +199,6 @@ export function createViz01Chart(
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Title
     g.append('text')
       .attr('class', 'chart-title')
       .attr('x', innerW / 2)
@@ -208,7 +206,6 @@ export function createViz01Chart(
       .attr('text-anchor', 'middle')
       .text('Average Audio Profile by Genre Family');
 
-    // Scales
     const x = d3
       .scalePoint<string>()
       .domain(dims.map((d) => d.key))
@@ -222,7 +219,6 @@ export function createViz01Chart(
       ]),
     );
 
-    // Background axis lines
     dims.forEach((dim) => {
       g.append('line')
         .attr('x1', x(dim.key)!)
@@ -234,7 +230,6 @@ export function createViz01Chart(
         .attr('stroke-opacity', 0.4);
     });
 
-    // Line generator
     const lineGen = d3
       .line<[string, number]>()
       .defined(([, v]) => Number.isFinite(v))
@@ -244,7 +239,6 @@ export function createViz01Chart(
     const makePath = (d: FamilyAvg) =>
       lineGen(dims.map((dim) => [dim.key, d.values[dim.key] ?? 0]));
 
-    // Lines
     const paths = g
       .selectAll<SVGPathElement, FamilyAvg>('.pc-line')
       .data(data, (d) => d.family.key)
@@ -264,7 +258,6 @@ export function createViz01Chart(
         .attr('stroke-width', (d) => (isInBrush(d) ? 2.2 : 1.5));
     }
 
-    // Hover interactions on lines
     paths
       .on('mouseover', function (event, d) {
         if (!isInBrush(d)) return;
@@ -279,7 +272,6 @@ export function createViz01Chart(
         tip.hide();
       });
 
-    // Dot markers at each axis crossing
     data.forEach((d) => {
       dims.forEach((dim) => {
         const xPos = x(dim.key)!;
@@ -296,7 +288,6 @@ export function createViz01Chart(
       });
     });
 
-    // Axes + brushes
     dims.forEach((dim) => {
       const xPos = x(dim.key)!;
       const yScale = yScales.get(dim.key)!;
@@ -316,7 +307,6 @@ export function createViz01Chart(
         .style('font-size', '11px')
         .text(dim.en);
 
-      // Brush
       const brush = d3
         .brushY()
         .extent([
@@ -337,7 +327,6 @@ export function createViz01Chart(
       axisG.append('g').attr('class', 'dim-brush').call(brush as d3.BrushBehavior<unknown>);
     });
 
-    // Legend below chart — shows ALL families with toggle checkboxes
     const legG = svg
       .append('g')
       .attr('transform', `translate(${margin.left},${chartH + margin.bottom + 10})`);
@@ -367,7 +356,6 @@ export function createViz01Chart(
         .attr('height', 22)
         .attr('fill', 'transparent');
 
-      // Checkbox background
       item
         .append('rect')
         .attr('width', 12)
@@ -378,7 +366,6 @@ export function createViz01Chart(
         .attr('stroke', d.family.color)
         .attr('stroke-width', 1.5);
 
-      // Checkmark when active
       if (isActive) {
         item
           .append('path')
@@ -398,7 +385,6 @@ export function createViz01Chart(
         .style('font-size', '11px')
         .text(d.family.en);
 
-      // Click to toggle
       item.on('click', () => {
         const keys = new Set(opts.selectedFamilyKeys);
         if (keys.has(d.family.key)) {
@@ -411,7 +397,6 @@ export function createViz01Chart(
         render();
       });
 
-      // Tooltip on hover
       item
         .on('mouseover', (event) => {
           const famName = d.family.en;

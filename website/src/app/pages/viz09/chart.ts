@@ -45,8 +45,6 @@ function bin2d(rows: TrackRow[], cfg: ModeDef): Cell[] {
     .map((d) => ({ x: Number(d[cfg.xKey]), y: Number(d[cfg.yKey]) }))
     .filter((d) => Number.isFinite(d.x) && Number.isFinite(d.y));
 
-  const xThresholds = d3.range(cfg.xDomain[0], cfg.xDomain[1], (cfg.xDomain[1] - cfg.xDomain[0]) / BINS);
-  const yThresholds = d3.range(cfg.yDomain[0], cfg.yDomain[1], (cfg.yDomain[1] - cfg.yDomain[0]) / BINS);
   const counts = new Map<string, number>();
 
   points.forEach((p) => {

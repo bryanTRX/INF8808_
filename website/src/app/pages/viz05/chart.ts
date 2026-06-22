@@ -16,18 +16,18 @@ export type MajorGenre = (typeof MAJOR_GENRES)[number];
 
 // 12 maximally distinct colors — one unique hue per genre
 const GENRE_COLOR_MAP: Record<MajorGenre, string> = {
-  pop:        '#4285f4', // blue
-  rock:       '#e05252', // red
-  'hip-hop':  '#f59e0b', // amber
-  electronic: '#8b5cf6', // violet
-  dance:      '#06b6d4', // cyan
-  indie:      '#f97316', // orange
-  'r&b':      '#ec4899', // hot pink
-  country:    '#84cc16', // lime green
-  jazz:       '#0d9488', // teal
-  classical:  '#b45309', // bronze
-  latin:      '#e879f9', // fuchsia
-  metal:      '#64748b', // slate
+  pop:        '#4285f4',
+  rock:       '#e05252',
+  'hip-hop':  '#f59e0b',
+  electronic: '#8b5cf6',
+  dance:      '#06b6d4',
+  indie:      '#f97316',
+  'r&b':      '#ec4899',
+  country:    '#84cc16',
+  jazz:       '#0d9488',
+  classical:  '#b45309',
+  latin:      '#e879f9',
+  metal:      '#64748b',
 };
 
 const GENRE_LABELS_EN: Record<MajorGenre, string> = {
@@ -206,7 +206,6 @@ export function createViz05Chart(
         .append('g')
         .attr('transform', `translate(${col * fW + m.left},${row * fH + m.top})`);
 
-      // Facet background — theme-aware
       facet
         .insert('rect', ':first-child')
         .attr('x', -m.left + 4)
@@ -218,7 +217,6 @@ export function createViz05Chart(
         .attr('stroke', theme.border)
         .attr('stroke-width', 1);
 
-      // Facet title
       facet
         .append('text')
         .attr('y', -18)
@@ -227,7 +225,6 @@ export function createViz05Chart(
         .style('font-weight', '700')
         .text(`${lbl.genreLabels[genre]}  —  ${d3.format(',')(values.length)} ${lbl.tracks}`);
 
-      // Grid lines
       facet
         .append('g')
         .attr('class', 'grid')
@@ -244,7 +241,6 @@ export function createViz05Chart(
 
       facet.select('.grid .domain').remove();
 
-      // Axes
       facet
         .append('g')
         .attr('class', 'axis')
@@ -333,7 +329,6 @@ export function createViz05Chart(
               .defined((d) => Number.isFinite(d.y)),
           );
 
-        // Pearson r badge
         const rText = `r = ${d3.format('+.2f')(fit.r)}`;
         const badgeW = rText.length * 7.2 + 10;
         const badgeG = facet.append('g').attr('transform', `translate(${iW - badgeW - 2},2)`);

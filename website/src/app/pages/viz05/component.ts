@@ -31,7 +31,7 @@ export class Viz05Component implements AfterViewInit, OnDestroy {
   readonly genres = MAJOR_GENRES;
   readonly genreLabelsFr = GENRE_LABELS_FR;
   readonly genreLabelsEn = GENRE_LABELS_EN;
-  selectedGenres = new Set(['pop', 'rock', 'hip-hop', 'electronic', 'dance', 'latin']);
+  selectedGenres = new Set(['pop', 'rock', 'hip-hop', 'electronic', 'jazz', 'classical']);
   sampleSize = 250;
   sharedScales = true;
   readonly loadState = new VizLoadState(() => this.langService.lang());

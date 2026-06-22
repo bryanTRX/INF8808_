@@ -154,7 +154,7 @@ export function createViz05Chart(
     .filter((d): d is ParsedTrack => d !== null);
 
   let state: Viz05State = {
-    selectedGenres: new Set<MajorGenre>(['pop', 'rock', 'hip-hop', 'electronic', 'dance', 'latin']),
+    selectedGenres: new Set<MajorGenre>(['pop', 'rock', 'hip-hop', 'electronic', 'jazz', 'classical']),
     sampleSize: 250,
     sharedScales: true,
   };

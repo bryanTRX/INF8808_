@@ -49,13 +49,13 @@ import { Viz10Component } from '../viz10/component';
       <app-viz-chapter [entry]="catalog()[2]" />
       <app-viz03 />
     </div>
-    <div id="viz-4" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[3]" />
-      <app-viz04 />
-    </div>
     <div id="viz-5" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[4]" />
+      <app-viz-chapter [entry]="catalog()[3]" />
       <app-viz05 />
+    </div>
+    <div id="viz-4" class="viz-scroll-target">
+      <app-viz-chapter [entry]="catalog()[4]" />
+      <app-viz04/>
     </div>
     <div id="viz-6" class="viz-scroll-target">
       <app-viz-chapter [entry]="catalog()[5]" />

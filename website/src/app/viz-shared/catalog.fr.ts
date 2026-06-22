@@ -3,7 +3,7 @@ import type { VizEntry } from './viz-catalog';
 export const STORY_PROLOGUE_FR = {
   eyebrow: 'Une visite guidée',
   title: 'À quoi ressemble vraiment un tube ?',
-  lead: 'Chaque écoute sur Spotify laisse une trace sous forme de données : dansabilité, énergie, tempo, volume sonore et bien plus. Ce tableau de bord transforme ces caractéristiques audio en une histoire : comment les genres diffèrent, ce qui est lié à la popularité et quels profils se dégagent chez les plus grands artistes.',
+  lead: 'Chaque écoute sur Spotify laisse une trace sous forme de données : dansabilité, énergie, tempo, volume sonore et bien plus. Ce tableau de bord transforme ces caractéristiques audio en une histoire : comment les genres diffèrent est illustré dans les 4 premières visualisations, ce qui est lié à la popularité est montré dans les graphiques 5 à 9, et quels sont les profils des artistes les plus populaires dans la dixième visualisation.',
   bridge: 'Faites défiler les dix chapitres interactifs ou accédez directement à une section via la barre latérale. Survolez les graphiques pour plus de détails et utilisez les filtres lorsque disponibles.',
 };
 
@@ -43,25 +43,25 @@ export const VIZ_CATALOG_FR: VizEntry[] = [
   },
   {
     id: 4,
-    anchor: 'viz-4',
-    title: 'Corrélation avec la popularité',
-    subtitle: 'Corrélation des caractéristiques audio',
-    source: 'viz-4',
-    chapter: 'Chapitre 04 — Ce que la popularité écoute',
-    narrative: 'Ce graphique examine quelles caractéristiques audio sont associées à la popularité Spotify. Chaque barre représente la corrélation entre une caractéristique et le score de popularité.',
-    insight: 'Les caractéristiques positives indiquent qu’elles augmentent avec la popularité. Le volume sonore (loudness) et la dansabilité sont les plus corrélés positivement, tandis que l’instrumentalité et la parole (speechiness) sont négativement corrélées.',
-    readingGuide: 'Comparez les vues Pearson et Spearman pour identifier les relations les plus robustes.',
-  },
-  {
-    id: 5,
     anchor: 'viz-5',
     title: 'Tempo vs dansabilité',
     subtitle: 'Nuage de points par genre',
     source: 'viz-5',
-    chapter: 'Chapitre 05 — L’équation du rythme',
+    chapter: 'Chapitre 04 — L’équation du rythme',
     narrative: 'Le tempo définit la vitesse d’un morceau, tandis que la dansabilité mesure sa facilité à être dansé. Chaque graphique représente un genre avec une tendance locale.',
     insight: 'De manière surprenante, un tempo plus élevé est souvent associé à une dansabilité plus faible. Seuls les genres Classique et Jazz montrent l’effet inverse.',
     readingGuide: 'Activez ou désactivez des genres. Une pente forte indique une relation marquée entre tempo et dansabilité.',
+  },
+  {
+    id: 5,
+    anchor: 'viz-4',
+    title: 'Corrélation avec la popularité',
+    subtitle: 'Corrélation des caractéristiques audio',
+    source: 'viz-4',
+    chapter: 'Chapitre 05 — Ce que la popularité écoute',
+    narrative: 'Ce graphique examine quelles caractéristiques audio sont associées à la popularité Spotify. Chaque barre représente la corrélation entre une caractéristique et le score de popularité.',
+    insight: 'Les caractéristiques positives indiquent qu’elles augmentent avec la popularité. Le volume sonore (loudness) et la dansabilité sont les plus corrélés positivement, tandis que l’instrumentalité et la parole (speechiness) sont négativement corrélées.',
+    readingGuide: 'Comparez les vues Pearson et Spearman pour identifier les relations les plus robustes.',
   },
   {
     id: 6,

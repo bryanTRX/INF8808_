@@ -16,7 +16,7 @@ export interface VizEntry {
 export const STORY_PROLOGUE = {
   eyebrow: 'A guided tour',
   title: 'What does a hit song actually sound like?',
-  lead: 'Every stream on Spotify leaves behind a trail of numbers, like danceability, energy, tempo, loudness, and more. This dashboard turns those audio features into a story: how genres differ, what correlates with popularity, and what the biggest artists profiles are.',
+  lead: 'Every stream on Spotify leaves behind a trail of numbers, like danceability, energy, tempo, loudness, and more. This dashboard turns those audio features into a story: how genres differ is illustrated in the first four visualizations, what correlates with popularity is shown in the fifth to ninth graphs, and the biggest artists profiles are presented in the tenth visualization.',
   bridge: 'Scroll through ten interactive chapters, or jump to any section from the sidebar. Hover charts for details and use filters where available.',
 };
 
@@ -56,25 +56,25 @@ export const VIZ_CATALOG: VizEntry[] = [
   },
   {
     id: 4,
-    anchor: 'viz-4',
-    title: 'Popularity Correlation',
-    subtitle: 'Feature Correlation with Popularity',
-    source: 'viz-4',
-    chapter: 'Chapter 04 — What popularity listens for',
-    narrative: 'This chart asks an important question of the dataset: which audio qualities move alongside Spotify popularity? Each bar represents one feature, scored by how strongly it correlates with a track\'s popularity score.',
-    insight: 'A positive bar means more of that feature tends to accompany higher popularity, while a negative bar indicates the opposite. In both views, Loudness and Danceability are the top 2 features that correlate positively with popularity, while Instrumentalness and Speechiness are the top 2 features that correlate negatively with it.',
-    readingGuide: 'Switch between Pearson (linear relationship) and Spearman (rank-based) to indentify features that hold their position in both views.',
-  },
-  {
-    id: 5,
     anchor: 'viz-5',
     title: 'Tempo vs Danceability',
     subtitle: 'Faceted scatter by genre',
     source: 'viz-5',
-    chapter: 'Chapter 05 — The dance-floor equation',
+    chapter: 'Chapter 04 — The dance-floor equation',
     narrative: 'Tempo sets the pace, and danceability captures how easy a track is to move to. Each small multiple in this faceted scatter plot focuses on one genre, with a sample of tracks and a regression line tracing the local trend.',
     insight: 'Surprisingly, it seems like a higher tempo results in a lower danceability in most genres. Only Classical and Jazz music show the opposite trend, where faster songs in that genre also tend to feel more danceable.',
     readingGuide: 'Toggle genres using the chips to isolate them. A steep slope means tempo and danceability are tightly linked',
+  },
+  {
+    id: 5,
+    anchor: 'viz-4',
+    title: 'Popularity Correlation',
+    subtitle: 'Feature Correlation with Popularity',
+    source: 'viz-4',
+    chapter: 'Chapter 05 — What popularity listens for',
+    narrative: 'This chart asks an important question of the dataset: which audio qualities move alongside Spotify popularity? Each bar represents one feature, scored by how strongly it correlates with a track\'s popularity score.',
+    insight: 'A positive bar means more of that feature tends to accompany higher popularity, while a negative bar indicates the opposite. In both views, Loudness and Danceability are the top 2 features that correlate positively with popularity, while Instrumentalness and Speechiness are the top 2 features that correlate negatively with it.',
+    readingGuide: 'Switch between Pearson (linear relationship) and Spearman (rank-based) to indentify features that hold their position in both views.',
   },
   {
     id: 6,
@@ -84,7 +84,7 @@ export const VIZ_CATALOG: VizEntry[] = [
     source: 'viz-6',
     chapter: 'Chapter 06 — The link between acousticness and popularity',
     narrative: 'Acousticness measures how unplugged a recording sounds, while dense electronic production scores low. This chapter puts Pop and Rock side by side, using regression lines and binned mean curves to reveal how acousticness relates to popularity in each genre.',
-    insight: 'The slope if almost flat, so the relationship between acousticness and popularity is weak both genres. However, Pop and Rock show opposite trends. Up until around 0.8 acousticness, more acoustic tracks in Poptend to be more popular, while in Rock, more acoustic tracks tend to be less popular. There is an opposite trend in the last 20% of the acoustic range.',
+    insight: 'The slope if almost flat, so the relationship between acousticness and popularity is weak both genres. However, Pop and Rock show opposite trends. Up until around 0.8 acousticness, more acoustic tracks in Pop tend to be more popular, while in Rock, more acoustic tracks tend to be less popular. There is an opposite trend in the last 20% of the acoustic range.',
     readingGuide: 'A rising slope of the lines means more acoustic tracks tend to be more popular in that genre; a falling slope means the opposite.',
   },
   {

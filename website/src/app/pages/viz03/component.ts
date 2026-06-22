@@ -4,7 +4,6 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
-  effect,
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +13,6 @@ import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
 import { SortOrder, createViz03Chart, Viz03Chart } from './chart';
-import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
 @Component({
@@ -26,8 +24,7 @@ import { VizLoadState } from '../../core/i18n/viz-load-state';
 export class Viz03Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
 
-  readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
   sortOrder: SortOrder = 'asc';
 
@@ -37,20 +34,9 @@ export class Viz03Component implements AfterViewInit, OnDestroy {
   private cleanupTheme?: () => void;
   private tip = createTooltip();
 
-  constructor() {
-    effect(() => {
-      const lang = this.langService.lang() as 'en' | 'fr';
-      this.controller?.update({ lang });
-    });
-  }
-
-  get lang(): 'en' | 'fr' {
-    return this.langService.lang() as 'en' | 'fr';
-  }
-
   setSortOrder(order: SortOrder) {
     this.sortOrder = order;
-    this.controller?.update({ sortOrder: order, lang: this.lang });
+    this.controller?.update({ sortOrder: order });
   }
 
   ngAfterViewInit() {
@@ -61,7 +47,7 @@ export class Viz03Component implements AfterViewInit, OnDestroy {
             this.chartRef.nativeElement,
             rows,
             this.tip,
-            { sortOrder: this.sortOrder, lang: this.lang },
+            { sortOrder: this.sortOrder },
           );
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () =>
             this.controller?.resize(),

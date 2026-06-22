@@ -12,19 +12,18 @@ export { GENRE_FAMILIES };
 export interface DimDef {
   key: string;
   en: string;
-  fr: string;
   domain: [number, number];
   fmt: (v: number) => string;
 }
 
 export const ALL_DIMS: DimDef[] = [
-  { key: 'danceability', en: 'Danceability', fr: 'Dansabilité', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'energy', en: 'Energy', fr: 'Énergie', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'acousticness', en: 'Acousticness', fr: 'Acousticité', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'valence', en: 'Valence', fr: 'Valence', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'speechiness', en: 'Speechiness', fr: 'Parole', domain: [0, 0.5], fmt: d3.format('.2f') },
-  { key: 'instrumentalness', en: 'Instrumentalness', fr: 'Instrumentalité', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'tempo', en: 'Tempo (BPM)', fr: 'Tempo (BPM)', domain: [60, 180], fmt: d3.format('.0f') },
+  { key: 'danceability', en: 'Danceability', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'energy', en: 'Energy', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'acousticness', en: 'Acousticness', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'valence', en: 'Valence', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'speechiness', en: 'Speechiness', domain: [0, 0.5], fmt: d3.format('.2f') },
+  { key: 'instrumentalness', en: 'Instrumentalness', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'tempo', en: 'Tempo (BPM)', domain: [60, 180], fmt: d3.format('.0f') },
 ];
 
 export const DEFAULT_DIM_KEYS = ['danceability', 'energy', 'acousticness', 'valence', 'tempo'];
@@ -96,7 +95,6 @@ function buildFamilyData(rows: TrackRow[]): FamilyAvg[] {
 export interface Viz01Options {
   dimKeys: string[];
   selectedFamilyKeys: string[];
-  lang: 'en' | 'fr';
 }
 
 export interface Viz01Chart {
@@ -119,7 +117,6 @@ export function createViz01Chart(
   let opts: Viz01Options = {
     dimKeys: DEFAULT_DIM_KEYS,
     selectedFamilyKeys: GENRE_FAMILIES.map((f) => f.key),
-    lang: 'en',
     ...initialOpts,
   };
 
@@ -142,14 +139,14 @@ export function createViz01Chart(
     return true;
   }
 
-  function makeTooltip(d: FamilyAvg, dims: DimDef[], lang: 'en' | 'fr'): string {
-    const famName = lang === 'fr' ? d.family.fr : d.family.en;
+  function makeTooltip(d: FamilyAvg, dims: DimDef[]): string {
+    const famName = d.family.en;
     const subList = d.subgenres.join(', ');
     const dimRows = dims
       .map(
         (dim) =>
           `<div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-            <span style="color:var(--muted)">${lang === 'fr' ? dim.fr : dim.en}</span>
+            <span style="color:var(--muted)">${dim.en}</span>
             <span class="tooltip-value">${dim.fmt(d.values[dim.key] ?? 0)}</span>
           </div>`,
       )
@@ -161,7 +158,7 @@ export function createViz01Chart(
         <strong style="font-size:0.9rem">${famName}</strong>
       </div>
       <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.3rem">
-        ${d3.format(',')(d.trackCount)}&nbsp;${lang === 'fr' ? 'titres' : 'tracks'}
+        ${d3.format(',')(d.trackCount)}&nbsp;tracks
       </div>
       <div style="color:var(--muted);font-size:0.77rem;font-style:italic;margin-bottom:0.55rem">${subList}</div>
       <div style="border-top:1px solid var(--border);padding-top:0.45rem;font-size:0.82rem">
@@ -176,11 +173,9 @@ export function createViz01Chart(
     const dims = getActiveDims();
     const data = getActiveData();
     const theme = getChartTheme();
-    const { lang } = opts;
 
     if (dims.length < 2 || data.length === 0) return;
 
-    const totalTracks = allFamilyData.reduce((s, d) => s + d.trackCount, 0);
     const width = Math.max(580, container.clientWidth || 900);
 
     const legendRows = Math.ceil(allFamilyData.length / 5);
@@ -207,11 +202,7 @@ export function createViz01Chart(
       .attr('x', innerW / 2)
       .attr('y', -42)
       .attr('text-anchor', 'middle')
-      .text(
-        lang === 'fr'
-          ? `Profil audio moyen par famille de genres`
-          : `Average Audio Profile by Genre Family`,
-      );
+      .text('Average Audio Profile by Genre Family');
 
     // Scales
     const x = d3
@@ -274,7 +265,7 @@ export function createViz01Chart(
       .on('mouseover', function (event, d) {
         if (!isInBrush(d)) return;
         d3.select(this).raise().attr('stroke-width', 4.5).attr('opacity', 1);
-        tip.show(event, makeTooltip(d, dims, lang));
+        tip.show(event, makeTooltip(d, dims));
       })
       .on('mousemove', (event) => tip.move(event))
       .on('mouseout', function (_, d) {
@@ -319,7 +310,7 @@ export function createViz01Chart(
         .attr('text-anchor', 'middle')
         .style('font-weight', '600')
         .style('font-size', '11px')
-        .text(lang === 'fr' ? dim.fr : dim.en);
+        .text(dim.en);
 
       // Brush
       const brush = d3
@@ -342,7 +333,7 @@ export function createViz01Chart(
       axisG.append('g').attr('class', 'dim-brush').call(brush as d3.BrushBehavior<unknown>);
     });
 
-    // Legend below chart — shows ALL families with toggle checkboxes
+    // Legend below chart
     const legG = svg
       .append('g')
       .attr('transform', `translate(${margin.left},${chartH + margin.bottom + 10})`);
@@ -363,7 +354,6 @@ export function createViz01Chart(
         .style('cursor', 'pointer')
         .style('opacity', isActive ? 1 : 0.35);
 
-      // Transparent hit area covering the full cell so the whole row is clickable
       item
         .append('rect')
         .attr('x', 0)
@@ -372,7 +362,6 @@ export function createViz01Chart(
         .attr('height', 22)
         .attr('fill', 'transparent');
 
-      // Checkbox background
       item
         .append('rect')
         .attr('width', 12)
@@ -383,7 +372,6 @@ export function createViz01Chart(
         .attr('stroke', d.family.color)
         .attr('stroke-width', 1.5);
 
-      // Checkmark when active
       if (isActive) {
         item
           .append('path')
@@ -401,13 +389,12 @@ export function createViz01Chart(
         .attr('x', 18)
         .attr('class', 'legend-label')
         .style('font-size', '11px')
-        .text(lang === 'fr' ? d.family.fr : d.family.en);
+        .text(d.family.en);
 
-      // Click to toggle
       item.on('click', () => {
         const keys = new Set(opts.selectedFamilyKeys);
         if (keys.has(d.family.key)) {
-          if (keys.size <= 2) return; // keep at least 2
+          if (keys.size <= 2) return;
           keys.delete(d.family.key);
         } else {
           keys.add(d.family.key);
@@ -416,18 +403,16 @@ export function createViz01Chart(
         render();
       });
 
-      // Tooltip on hover
       item
         .on('mouseover', (event) => {
-          const famName = lang === 'fr' ? d.family.fr : d.family.en;
           tip.show(
             event,
             `<div style="margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem">
               <span style="width:10px;height:10px;border-radius:50%;background:${d.family.color};display:inline-block;flex-shrink:0"></span>
-              <strong>${famName}</strong>
+              <strong>${d.family.en}</strong>
             </div>
             <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.3rem">
-              ${lang === 'fr' ? 'Sous-genres inclus' : 'Included subgenres'}:
+              Included subgenres:
             </div>
             <div style="font-size:0.82rem">${d.subgenres.join(', ')}</div>`,
           );

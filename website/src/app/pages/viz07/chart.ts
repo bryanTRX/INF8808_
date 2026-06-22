@@ -1,293 +1,176 @@
 import * as d3 from 'd3';
-import { getChartTheme } from '../../viz-shared/chart-theme';
 import { TrackRow } from '../../core/models/track-row';
+import { getChartTheme } from '../../viz-shared/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
-import type { Lang } from '../../core/services/lang.service';
 
-const L = (lang: Lang) =>
-  lang === 'fr'
-    ? {
-        axisX: 'Durée (min : sec)',
-        axisY: 'Popularité moyenne',
-        avgLabel: 'Moy. générale',
-        songs: 'titres',
-        rank: 'Rang',
-        of: 'sur',
-        avg: 'Moy.',
-        median: 'Médiane',
-        tipAvg: 'Moy. popularité',
-        tipMedian: 'Médiane',
-        tipCount: 'Titres',
-        tipRank: 'Rang',
-        hoverDefault: 'Survolez une barre pour voir la popularité moyenne pour cette durée.',
-      }
-    : {
-        axisX: 'Song length (min : sec)',
-        axisY: 'Average popularity',
-        avgLabel: 'Overall avg.',
-        songs: 'tracks',
-        rank: 'Rank',
-        of: 'of',
-        avg: 'Avg.',
-        median: 'Median',
-        tipAvg: 'Avg. popularity',
-        tipMedian: 'Median',
-        tipCount: 'Tracks',
-        tipRank: 'Rank',
-        hoverDefault: 'Hover a bar to see average popularity for that length range.',
-      };
+// ─── Labels ───────────────────────────────────────────────────────────────────
 
-export interface DurationBin {
-  bin_start: number;
-  avg_duration: number;
+const LBL = {
+  title: 'Song Duration vs. Popularity',
+  subtitle: 'Tracks under 15 minutes — binned by 30-second intervals',
+  xLabel: 'Duration (minutes)',
+  yLabel: 'Average popularity',
+  tipDuration: 'Duration',
+  tipAvgPop: 'Avg. popularity',
+  tipTracks: 'Tracks in bin',
+  tipRange: 'Range',
+};
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface BinDatum {
+  range: [number, number];
   avg_popularity: number;
-  median_popularity: number;
   count: number;
 }
 
-export interface Viz07Meta {
-  tracks_in_view: number;
-  correlation: number;
-  bin_width_minutes: number;
-}
-
-
-function computeBins(rows: TrackRow[]): { bins: DurationBin[]; meta: Viz07Meta } {
-  const BIN_WIDTH = 0.5; // 30 seconds
-  const MAX_MIN = 15;
-  const valid = rows
-    .map((d) => ({
-      duration_min: Number(d.duration_ms) / 60000,
-      popularity: Number(d.popularity),
-    }))
-    .filter((d) => Number.isFinite(d.duration_min) && Number.isFinite(d.popularity) && d.duration_min < MAX_MIN);
-
-  const binMap = new Map<number, { sumDur: number; sumPop: number; pops: number[]; count: number }>();
-  valid.forEach((d) => {
-    const start = Math.floor(d.duration_min / BIN_WIDTH) * BIN_WIDTH;
-    if (!binMap.has(start)) binMap.set(start, { sumDur: 0, sumPop: 0, pops: [], count: 0 });
-    const b = binMap.get(start)!;
-    b.sumDur += d.duration_min;
-    b.sumPop += d.popularity;
-    b.pops.push(d.popularity);
-    b.count += 1;
-  });
-
-  const bins: DurationBin[] = [...binMap.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([bin_start, b]) => ({
-      bin_start,
-      avg_duration: b.sumDur / b.count,
-      avg_popularity: b.sumPop / b.count,
-      median_popularity: d3.median(b.pops) ?? 0,
-      count: b.count,
-    }));
-
-  const correlation = (() => {
-    const pairs = valid.map((d) => ({ x: d.duration_min, y: d.popularity }));
-    const mx = d3.mean(pairs, (d) => d.x)!;
-    const my = d3.mean(pairs, (d) => d.y)!;
-    let num = 0, dx = 0, dy = 0;
-    pairs.forEach((d) => {
-      const a = d.x - mx, b = d.y - my;
-      num += a * b; dx += a * a; dy += b * b;
-    });
-    return num / Math.sqrt(dx * dy) || 0;
-  })();
-
-  return {
-    bins,
-    meta: { tracks_in_view: valid.length, correlation: +correlation.toFixed(4), bin_width_minutes: BIN_WIDTH },
-  };
-}
-
-function formatDuration(min: number) {
-  const m = Math.floor(min);
-  const s = Math.round((min - m) * 60);
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
-
 export interface Viz07Chart {
-  setLang: (lang: Lang) => void;
+  getMeta: () => { tracks_in_view: number; correlation: number; bin_width_minutes: number };
+  getFullBins: () => BinDatum[];
   resize: () => void;
   destroy: () => void;
-  getMeta: () => Viz07Meta;
-  getFullBins: () => DurationBin[];
 }
+
+// ─── Chart Factory ────────────────────────────────────────────────────────────
 
 export function createViz07Chart(
   container: HTMLElement,
   rows: TrackRow[],
   tip: VizTooltip,
-  initLang: Lang = 'fr',
 ): Viz07Chart {
-  const { bins: fullData, meta } = computeBins(rows);
-  let _lang: Lang = initLang;
-  let hoveredBin: number | null = null;
-  const MAX_BINS = 20;
+  const BIN_WIDTH_MS = 30_000;
+  const MAX_MINUTES = 15;
+  const MAX_MS = MAX_MINUTES * 60_000;
 
-  // Fixed layout constants
-  const margin = { top: 28, right: 32, bottom: 52, left: 58 };
-  const plotHeight = 380;
-  // Each bin gets a fixed pixel width so all bins are always visible via scroll
-  const BAR_SPACING = 44;
-  const BAR_W = 28;
+  const clean = rows
+    .map((r) => ({ dur: Number(r.duration_ms), pop: Number(r.popularity) }))
+    .filter((d) => Number.isFinite(d.dur) && Number.isFinite(d.pop) && d.dur > 0 && d.dur <= MAX_MS);
+
+  const numBins = Math.ceil(MAX_MS / BIN_WIDTH_MS);
+  const binData: Array<{ dur: number; pop: number }[]> = Array.from({ length: numBins }, () => []);
+
+  clean.forEach((d) => {
+    const idx = Math.min(Math.floor(d.dur / BIN_WIDTH_MS), numBins - 1);
+    binData[idx].push(d);
+  });
+
+  const fullBins: BinDatum[] = binData.map((tracks, i) => ({
+    range: [(i * BIN_WIDTH_MS) / 60_000, ((i + 1) * BIN_WIDTH_MS) / 60_000],
+    avg_popularity: tracks.length > 0 ? (d3.mean(tracks, (d) => d.pop) ?? 0) : 0,
+    count: tracks.length,
+  }));
+
+  const correlation = (() => {
+    const xs = clean.map((d) => d.dur / 60_000);
+    const ys = clean.map((d) => d.pop);
+    const mx = d3.mean(xs) ?? 0, my = d3.mean(ys) ?? 0;
+    let n = 0, dx = 0, dy = 0;
+    xs.forEach((x, i) => { n += (x - mx) * (ys[i] - my); dx += (x - mx) ** 2; dy += (ys[i] - my) ** 2; });
+    const r = n / Math.sqrt(dx * dy);
+    return parseFloat(r.toFixed(3));
+  })();
 
   function render() {
     container.innerHTML = '';
-    const lbl = L(_lang);
     const theme = getChartTheme();
-    const data = fullData.slice(0, MAX_BINS);
 
-    const innerWidth = data.length * BAR_SPACING;
-    const innerHeight = plotHeight;
-    const svgWidth = innerWidth + margin.left + margin.right;
-    const totalSvgHeight = margin.top + plotHeight + margin.bottom;
+    const margin = { top: 56, right: 32, bottom: 64, left: 56 };
+    const width = Math.max(600, container.clientWidth || 900);
+    const height = Math.max(380, container.clientHeight || 480);
+    const innerW = width - margin.left - margin.right;
+    const innerH = height - margin.top - margin.bottom;
 
-    const y = d3.scaleLinear()
-      .domain([
-        Math.max(0, (d3.min(data, (d) => d.avg_popularity) ?? 0) - 3),
-        (d3.max(data, (d) => d.avg_popularity) ?? 100) + 6,
-      ])
-      .range([innerHeight, 0]);
+    const displayed = fullBins.filter((b) => b.count > 0);
 
     const x = d3.scaleLinear()
-      .domain([
-        data[0].avg_duration - meta.bin_width_minutes / 2,
-        data[data.length - 1].avg_duration + meta.bin_width_minutes / 2,
-      ])
-      .range([0, innerWidth]);
+      .domain([0, MAX_MINUTES])
+      .range([0, innerW]);
 
-    const overallAvg = d3.mean(data, (d) => d.avg_popularity) ?? 0;
+    const y = d3.scaleLinear()
+      .domain([0, Math.max(100, (d3.max(displayed, (b) => b.avg_popularity) ?? 100) * 1.05)])
+      .range([innerH, 0])
+      .nice();
 
-    // ── Scrollable wrapper — one single wide SVG scrolls left/right ───────────
-    const scrollDiv = d3.select(container).append('div')
-      .attr('class', 'viz07-scroll');
+    const barW = Math.max(1, (innerW / MAX_MINUTES) * (BIN_WIDTH_MS / 60_000) - 1);
 
-    const svg = scrollDiv.append('svg')
-      .attr('width', svgWidth)
-      .attr('height', totalSvgHeight);
+    const svg = d3.select(container).append('svg')
+      .attr('width', width).attr('height', height)
+      .attr('viewBox', `0 0 ${width} ${height}`);
 
-    const gMain = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Y axis
-    gMain.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6));
+    // Title
+    g.append('text').attr('class', 'chart-title')
+      .attr('x', innerW / 2).attr('y', -32).attr('text-anchor', 'middle')
+      .text(LBL.title);
+    g.append('text').attr('class', 'chart-subtitle')
+      .attr('x', innerW / 2).attr('y', -14).attr('text-anchor', 'middle')
+      .text(LBL.subtitle);
 
-    // Y axis label
-    gMain.append('text').attr('class', 'axis-label')
-      .attr('transform', 'rotate(-90)')
-      .attr('x', -innerHeight / 2).attr('y', -44)
-      .attr('text-anchor', 'middle')
-      .text(lbl.axisY);
-
-    // Horizontal grid lines
-    gMain.append('g').attr('class', 'grid')
-      .call(d3.axisLeft(y).ticks(6).tickSize(-innerWidth).tickFormat(() => ''))
-      .call((g) => { g.select('.domain').remove(); g.selectAll('line').attr('stroke', theme.border).attr('stroke-opacity', 0.3); });
-
-    // X axis
-    gMain.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerHeight})`)
-      .call(
-        d3.axisBottom(x)
-          .tickValues(data.map((d) => d.avg_duration))
-          .tickFormat((d) => formatDuration(+d)),
-      )
-      .selectAll('text')
-      .attr('transform', 'rotate(-45)')
-      .attr('text-anchor', 'end')
-      .attr('dx', '-0.4em')
-      .attr('dy', '0.1em')
-      .style('font-size', '9px');
-
-    // X axis label
-    gMain.append('text').attr('class', 'axis-label')
-      .attr('x', innerWidth / 2).attr('y', innerHeight + 48)
-      .attr('text-anchor', 'middle').text(lbl.axisX);
-
-    // Global average reference line
-    gMain.append('line')
-      .attr('stroke', theme.muted).attr('stroke-dasharray', '6,5').attr('stroke-width', 1.5)
-      .attr('x1', 0).attr('x2', innerWidth)
-      .attr('y1', y(overallAvg)).attr('y2', y(overallAvg));
-    gMain.append('text').attr('class', 'axis-label')
-      .style('font-size', '10px').style('font-weight', '600')
-      .attr('x', innerWidth - 4).attr('y', y(overallAvg) - 5)
-      .attr('text-anchor', 'end')
-      .text(`${lbl.avgLabel} ${overallAvg.toFixed(1)}`);
+    // Grid
+    g.append('g').attr('class', 'grid')
+      .selectAll('line').data(y.ticks(6)).join('line')
+      .attr('x1', 0).attr('x2', innerW)
+      .attr('y1', (v) => y(v)).attr('y2', (v) => y(v))
+      .attr('stroke', theme.border).attr('stroke-opacity', 0.35);
 
     // Bars
-    const barsLayer = gMain.append('g');
-    barsLayer.selectAll('.bar-group').data(data, (d) => (d as DurationBin).bin_start).join('g')
-      .attr('class', 'bar-group')
-      .each(function (d) {
-        const g = d3.select(this);
-        g.append('rect').attr('class', 'bar').attr('fill', theme.bar)
-          .attr('x', x(d.avg_duration) - BAR_W / 2)
-          .attr('y', y(d.avg_popularity))
-          .attr('width', BAR_W)
-          .attr('height', Math.max(0, innerHeight - y(d.avg_popularity)))
-          .attr('rx', 3)
-          .classed('is-hovered', d.bin_start === hoveredBin);
-        g.append('text').attr('class', 'value-label')
-          .style('font-size', '8.5px').style('font-weight', '600')
-          .attr('text-anchor', 'middle')
-          .attr('x', x(d.avg_duration)).attr('y', y(d.avg_popularity) - 3)
-          .text(d.avg_popularity.toFixed(1));
-      });
-
-    // Invisible hit targets
-    const hitLayer = gMain.append('g');
-    hitLayer.selectAll('.bar-hit').data(data, (d) => (d as DurationBin).bin_start).join('rect')
-      .attr('fill', 'transparent').attr('cursor', 'pointer')
-      .attr('x', (d) => x(d.avg_duration) - BAR_SPACING / 2)
-      .attr('y', 0).attr('width', BAR_SPACING).attr('height', innerHeight)
-      .on('mouseenter', (event, d) => {
-        hoveredBin = d.bin_start;
-        barsLayer.selectAll('.bar').classed('is-hovered', (b) => (b as DurationBin).bin_start === hoveredBin);
-        const rank = [...data].sort((a, b) => b.avg_popularity - a.avg_popularity)
-          .findIndex((b) => b.bin_start === d.bin_start) + 1;
-        const binEnd = d.bin_start + meta.bin_width_minutes;
-        const range = `${formatDuration(d.bin_start)} – ${formatDuration(binEnd)}`;
-        tip.show(
-          event,
-          `<div style="margin-bottom:0.35rem">
-            <strong style="font-size:0.9rem">${range}</strong>
+    g.selectAll<SVGRectElement, BinDatum>('.bar')
+      .data(displayed).join('rect').attr('class', 'bar')
+      .attr('x', (b) => x(b.range[0]))
+      .attr('y', (b) => y(b.avg_popularity))
+      .attr('width', barW)
+      .attr('height', (b) => Math.max(0, innerH - y(b.avg_popularity)))
+      .attr('fill', (b) => {
+        const t = b.avg_popularity / 100;
+        return d3.interpolateRdYlGn(t);
+      })
+      .attr('rx', 2).attr('opacity', 0.82)
+      .on('mouseover', function (event, b) {
+        d3.select(this).attr('opacity', 1);
+        const fmt = d3.format('.2f');
+        const fmtN = d3.format(',');
+        tip.show(event, `
+          <div style="font-size:0.84rem;margin-bottom:0.4rem">
+            <strong>${LBL.tipDuration}: ${fmt(b.range[0])} – ${fmt(b.range[1])} min</strong>
           </div>
           <div style="border-top:1px solid var(--border);padding-top:0.4rem;font-size:0.82rem">
             <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-              <span style="color:var(--muted)">${lbl.tipAvg}</span>
-              <span class="tooltip-value">${d.avg_popularity.toFixed(1)}</span>
+              <span style="color:var(--muted)">${LBL.tipAvgPop}</span>
+              <span class="tooltip-value">${fmt(b.avg_popularity)}</span>
             </div>
             <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-              <span style="color:var(--muted)">${lbl.tipMedian}</span>
-              <span class="tooltip-value">${d.median_popularity.toFixed(1)}</span>
+              <span style="color:var(--muted)">${LBL.tipTracks}</span>
+              <span class="tooltip-value">${fmtN(b.count)}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-              <span style="color:var(--muted)">${lbl.tipCount}</span>
-              <span class="tooltip-value">${d.count.toLocaleString()}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-              <span style="color:var(--muted)">${lbl.tipRank}</span>
-              <span class="tooltip-value">#${rank} / ${data.length}</span>
-            </div>
-          </div>`,
-        );
+          </div>`);
       })
       .on('mousemove', (event) => tip.move(event))
-      .on('mouseleave', () => {
-        hoveredBin = null;
-        barsLayer.selectAll('.bar').classed('is-hovered', false);
-        tip.hide();
-      });
+      .on('mouseout', function () { d3.select(this).attr('opacity', 0.82); tip.hide(); });
 
+    // Axes
+    g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerH})`)
+      .call(d3.axisBottom(x).ticks(10).tickFormat((v) => `${v} min`));
+    g.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6));
+
+    g.append('text').attr('class', 'axis-label')
+      .attr('x', innerW / 2).attr('y', innerH + 46).attr('text-anchor', 'middle')
+      .text(LBL.xLabel);
+    g.append('text').attr('class', 'axis-label')
+      .attr('transform', 'rotate(-90)').attr('x', -innerH / 2).attr('y', -42)
+      .attr('text-anchor', 'middle').text(LBL.yLabel);
   }
 
   render();
+
   return {
-    setLang(l) { _lang = l; render(); },
+    getMeta: () => ({
+      tracks_in_view: clean.length,
+      correlation,
+      bin_width_minutes: BIN_WIDTH_MS / 60_000,
+    }),
+    getFullBins: () => fullBins,
     resize: render,
     destroy: () => { container.innerHTML = ''; },
-    getMeta: () => meta,
-    getFullBins: () => fullData,
   };
 }

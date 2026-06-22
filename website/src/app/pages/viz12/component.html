@@ -1,28 +1,22 @@
 <section class="viz-page">
-  <header>
-    <h1>{{ langService.lang() === 'fr' ? 'Popularité des titres — essaim de points' : 'Track Popularity — Beeswarm' }}</h1>
-    <p class="subtitle">{{ langService.lang() === 'fr'
-      ? 'Comment se distribue la popularité Spotify ? Chaque point représente un titre, positionné selon son score de popularité et coloré par genre.'
-      : 'How is Spotify popularity distributed? Each dot represents one track, positioned by its popularity score and colored by genre.' }}</p>
-  </header>
   <p class="status">{{ loadState.status() }}</p>
   <div class="controls">
-    <label>{{ langService.lang() === 'fr' ? 'Vue' : 'View' }}
+    <label>View
       <select [(ngModel)]="groupBy" (ngModelChange)="refresh()">
-        <option value="none">{{ langService.lang() === 'fr' ? 'Tous ensemble' : 'All together' }}</option>
-        <option value="genre">{{ langService.lang() === 'fr' ? 'Par genre' : 'By genre' }}</option>
+        <option value="none">All together</option>
+        <option value="explicit">Explicit / Clean</option>
+        <option value="genre">By genre</option>
       </select>
     </label>
-    <label>{{ langService.lang() === 'fr' ? 'Échantillon' : 'Sample' }} {{ sampleSize }}
+    <label>Sample {{ sampleSize }}
       <input type="range" min="500" max="5000" step="250" [(ngModel)]="sampleSize" (ngModelChange)="refresh()" />
     </label>
-    <label>{{ langService.lang() === 'fr' ? 'Recherche' : 'Search' }}
-      <input type="text" [(ngModel)]="search" (ngModelChange)="refresh()"
-        [placeholder]="langService.lang() === 'fr' ? 'Titre ou artiste' : 'Track or artist'" />
+    <label>Search
+      <input type="text" [(ngModel)]="search" (ngModelChange)="refresh()" placeholder="Track or artist" />
     </label>
-    <button type="button" (click)="reset()">{{ langService.lang() === 'fr' ? 'Réinitialiser' : 'Reset' }}</button>
+    <button type="button" (click)="reset()">Reset</button>
   </div>
-  <div #chart class="chart-container" style="min-height: 500px">
+  <div #chart class="chart-container" style="min-height:500px">
     @if (loadState.loading()) {
       <div class="chart-loading">{{ loadState.chartLoadingLabel() }}</div>
     }

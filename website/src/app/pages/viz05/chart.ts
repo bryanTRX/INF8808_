@@ -1,390 +1,241 @@
 import * as d3 from 'd3';
-import type { Lang } from '../../core/services/lang.service';
 import { TrackRow } from '../../core/models/track-row';
 import { getChartTheme } from '../../viz-shared/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
 
-// ─── Genre definitions ────────────────────────────────────────────────────────
-// Colors align with GENRE_FAMILIES in genre-families.ts for visual consistency
-
 export const MAJOR_GENRES = [
-  'pop', 'rock', 'hip-hop', 'electronic', 'dance',
-  'indie', 'r&b', 'country', 'jazz', 'classical', 'latin', 'metal',
-] as const;
+  'pop', 'rock', 'hip-hop', 'electronic', 'jazz', 'classical',
+  'dance', 'latin', 'country', 'r&b',
+];
 
-export type MajorGenre = (typeof MAJOR_GENRES)[number];
-
-// 12 maximally distinct colors — one unique hue per genre
-const GENRE_COLOR_MAP: Record<MajorGenre, string> = {
-  pop:        '#4285f4', // blue
-  rock:       '#e05252', // red
-  'hip-hop':  '#f59e0b', // amber
-  electronic: '#8b5cf6', // violet
-  dance:      '#06b6d4', // cyan
-  indie:      '#f97316', // orange
-  'r&b':      '#ec4899', // hot pink
-  country:    '#84cc16', // lime green
-  jazz:       '#0d9488', // teal
-  classical:  '#b45309', // bronze
-  latin:      '#e879f9', // fuchsia
-  metal:      '#64748b', // slate
+export const GENRE_LABELS: Record<string, string> = {
+  'pop': 'Pop',
+  'rock': 'Rock',
+  'hip-hop': 'Hip-Hop',
+  'electronic': 'Electronic',
+  'jazz': 'Jazz',
+  'classical': 'Classical',
+  'dance': 'Dance',
+  'latin': 'Latin',
+  'country': 'Country',
+  'r&b': 'R&B',
 };
 
-const GENRE_LABELS_FR: Record<MajorGenre, string> = {
-  pop: 'Pop', rock: 'Rock', 'hip-hop': 'Hip-Hop', electronic: 'Électronique',
-  dance: 'Dance', indie: 'Indie', 'r&b': 'R&B', country: 'Country',
-  jazz: 'Jazz', classical: 'Classique', latin: 'Latin', metal: 'Métal',
+const FEATURE_KEYS = ['danceability', 'energy', 'acousticness', 'valence', 'speechiness'] as const;
+type FeatureKey = (typeof FEATURE_KEYS)[number];
+
+const FEATURE_LABELS: Record<FeatureKey, string> = {
+  danceability: 'Danceability',
+  energy: 'Energy',
+  acousticness: 'Acousticness',
+  valence: 'Valence',
+  speechiness: 'Speechiness',
 };
-const GENRE_LABELS_EN: Record<MajorGenre, string> = {
-  pop: 'Pop', rock: 'Rock', 'hip-hop': 'Hip-Hop', electronic: 'Electronic',
-  dance: 'Dance', indie: 'Indie', 'r&b': 'R&B', country: 'Country',
-  jazz: 'Jazz', classical: 'Classical', latin: 'Latin', metal: 'Metal',
+
+const GENRE_COLORS: Record<string, string> = {
+  'pop': '#4C78A8', 'rock': '#E45756', 'hip-hop': '#F58518', 'electronic': '#79706E',
+  'jazz': '#54A24B', 'classical': '#B279A2', 'dance': '#EECA3B', 'latin': '#FF9DA6',
+  'country': '#9D755D', 'r&b': '#BAB0AC',
 };
-
-export const GENRE_LABELS = GENRE_LABELS_EN;
-
-const L = (lang: Lang) =>
-  lang === 'fr'
-    ? {
-        genreLabels: GENRE_LABELS_FR,
-        noGenre: 'Sélectionnez au moins un genre.',
-        tracks: 'titres',
-        axisY: 'Dansabilité',
-        axisX: 'Tempo (BPM)',
-        sharedLabel: 'Axes partagés',
-        resetLabel: 'Réinitialiser',
-        tip: { pop: 'Popularité', tempo: 'Tempo', dance: 'Dansabilité' },
-      }
-    : {
-        genreLabels: GENRE_LABELS_EN,
-        noGenre: 'Select at least one genre.',
-        tracks: 'tracks',
-        axisY: 'Danceability',
-        axisX: 'Tempo (BPM)',
-        sharedLabel: 'Shared axes',
-        resetLabel: 'Reset',
-        tip: { pop: 'Popularity', tempo: 'Tempo', dance: 'Danceability' },
-      };
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface ParsedTrack {
-  trackId: string;
-  artists: string;
-  trackName: string;
-  popularity: number;
-  tempo: number;
-  danceability: number;
-  genre: MajorGenre;
-}
 
 export interface Viz05State {
-  selectedGenres: Set<MajorGenre>;
+  selectedGenres: Set<string>;
   sampleSize: number;
   sharedScales: boolean;
 }
 
 export interface Viz05Chart {
-  update: (s: Viz05State) => void;
-  setLang: (l: Lang) => void;
   resize: () => void;
   destroy: () => void;
+  update: (state: Partial<Viz05State>) => void;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+interface GenreStats {
+  genre: string;
+  label: string;
+  color: string;
+  count: number;
+  data: Record<FeatureKey, number[]>;
+}
 
-function classifyGenre(raw: unknown): MajorGenre | null {
-  const tokens = String(raw || '')
-    .toLowerCase()
-    .split(';')
-    .map((t) => t.trim());
-  if (tokens.some((t) => t.includes('hip-hop') || t.includes('hip hop'))) return 'hip-hop';
-  if (tokens.some((t) => t === 'r-n-b' || t === 'r&b' || t.includes('soul'))) return 'r&b';
-  for (const g of MAJOR_GENRES) {
-    if (tokens.some((t) => t.includes(g))) return g;
+function buildGenreStats(rows: TrackRow[], selectedGenres: Set<string>, sampleSize: number): GenreStats[] {
+  const genreData = new Map<string, Record<FeatureKey, number[]>>();
+
+  for (const genre of MAJOR_GENRES) {
+    genreData.set(genre, {
+      danceability: [], energy: [], acousticness: [], valence: [], speechiness: [],
+    });
   }
-  return null;
-}
 
-function linReg(data: ParsedTrack[]) {
-  if (data.length < 2) return null;
-  const mx = d3.mean(data, (d) => d.tempo)!;
-  const my = d3.mean(data, (d) => d.danceability)!;
-  const num = d3.sum(data, (d) => (d.tempo - mx) * (d.danceability - my));
-  const xV = d3.sum(data, (d) => (d.tempo - mx) ** 2);
-  const yV = d3.sum(data, (d) => (d.danceability - my) ** 2);
-  if (xV === 0 || yV === 0) return null;
-  const slope = num / xV;
-  return { slope, intercept: my - slope * mx, r: num / Math.sqrt(xV * yV) };
-}
+  for (const row of rows) {
+    const genreField = String(row.track_genre || '').toLowerCase();
+    for (const genre of MAJOR_GENRES) {
+      if (genreField.includes(genre)) {
+        const gData = genreData.get(genre)!;
+        for (const f of FEATURE_KEYS) {
+          const v = Number(row[f as keyof TrackRow]);
+          if (Number.isFinite(v)) gData[f].push(v);
+        }
+        break;
+      }
+    }
+  }
 
-function sample<T>(arr: T[], n: number): T[] {
-  if (arr.length <= n) return arr;
-  const step = arr.length / n;
-  return d3.range(n).map((i) => arr[Math.floor(i * step)]);
-}
+  return MAJOR_GENRES
+    .filter((g) => selectedGenres.has(g))
+    .map((genre) => {
+      const rawData = genreData.get(genre)!;
+      const sampledData = {} as Record<FeatureKey, number[]>;
 
-// ─── Chart ────────────────────────────────────────────────────────────────────
+      for (const f of FEATURE_KEYS) {
+        const arr = rawData[f];
+        if (arr.length > sampleSize) {
+          const step = arr.length / sampleSize;
+          sampledData[f] = Array.from({ length: sampleSize }, (_, i) => arr[Math.floor(i * step)]);
+        } else {
+          sampledData[f] = [...arr];
+        }
+      }
 
-export function createViz05Chart(
-  container: HTMLElement,
-  rows: TrackRow[],
-  tip: VizTooltip,
-  initLang: Lang = 'en',
-): Viz05Chart {
-  let _lang = initLang;
-
-  const tracks = rows
-    .map((r): ParsedTrack | null => {
-      const tempo = Number(r.tempo);
-      const danceability = Number(r.danceability);
-      if (!Number.isFinite(tempo) || !Number.isFinite(danceability)) return null;
-      const genre = classifyGenre(r.track_genre);
-      if (!genre) return null;
       return {
-        trackId: String(r.track_id || ''),
-        artists: String(r.artists || ''),
-        trackName: String(r.track_name || ''),
-        popularity: Number(r.popularity),
-        tempo,
-        danceability,
         genre,
+        label: GENRE_LABELS[genre],
+        color: GENRE_COLORS[genre] ?? '#4C78A8',
+        count: Math.min(rawData.danceability.length, sampleSize),
+        data: sampledData,
       };
     })
-    .filter((d): d is ParsedTrack => d !== null);
+    .filter((g) => g.count > 0);
+}
 
+function kernelDensityEstimator(kernel: (v: number) => number, X: number[]) {
+  return function (V: number[]) {
+    return X.map((x) => [x, d3.mean(V, (v) => kernel(x - v)) ?? 0] as [number, number]);
+  };
+}
+
+function kernelEpanechnikov(k: number) {
+  return function (v: number) {
+    return Math.abs((v /= k)) <= 1 ? (0.75 * (1 - v * v)) / k : 0;
+  };
+}
+
+export function createViz05Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip): Viz05Chart {
   let state: Viz05State = {
-    selectedGenres: new Set<MajorGenre>(['pop', 'rock', 'hip-hop', 'electronic', 'jazz', 'classical']),
+    selectedGenres: new Set(['pop', 'rock', 'hip-hop', 'electronic', 'jazz', 'classical']),
     sampleSize: 250,
     sharedScales: true,
   };
 
   function render() {
     container.innerHTML = '';
-    const lbl = L(_lang);
     const theme = getChartTheme();
+    const genreStats = buildGenreStats(rows, state.selectedGenres, state.sampleSize);
 
-    const selected = MAJOR_GENRES.filter((g) => state.selectedGenres.has(g));
-    const facets = d3
-      .groups(
-        tracks.filter((d) => selected.includes(d.genre)),
-        (d) => d.genre,
-      )
-      .sort((a, b) => selected.indexOf(a[0]) - selected.indexOf(b[0]));
+    if (genreStats.length === 0) return;
 
-    if (!facets.length) {
-      container.innerHTML = `<p class="status">${lbl.noGenre}</p>`;
-      return;
+    const featureCount = FEATURE_KEYS.length;
+    const genreCount = genreStats.length;
+    const cellWidth = 140;
+    const cellHeight = 100;
+    const margin = { top: 50, right: 20, bottom: 20, left: 100 };
+    const gridW = margin.left + featureCount * cellWidth + margin.right;
+    const gridH = margin.top + genreCount * cellHeight + margin.bottom;
+
+    const svg = d3.select(container).append('svg')
+      .attr('width', gridW).attr('height', gridH)
+      .attr('viewBox', `0 0 ${gridW} ${gridH}`);
+
+    svg.append('text').attr('class', 'chart-title')
+      .attr('x', gridW / 2).attr('y', 22).attr('text-anchor', 'middle')
+      .text('Feature Distribution by Genre');
+
+    FEATURE_KEYS.forEach((feature, fi) => {
+      svg.append('text').attr('class', 'axis-label')
+        .attr('x', margin.left + fi * cellWidth + cellWidth / 2)
+        .attr('y', margin.top - 8).attr('text-anchor', 'middle')
+        .style('font-size', '11px').style('font-weight', '600')
+        .text(FEATURE_LABELS[feature]);
+    });
+
+    const allDensityMaxes = new Map<FeatureKey, number>();
+    if (state.sharedScales) {
+      const kde = kernelDensityEstimator(kernelEpanechnikov(0.1), d3.range(0, 1.01, 0.01));
+      for (const feature of FEATURE_KEYS) {
+        const maxVal = d3.max(genreStats.flatMap((gs) => kde(gs.data[feature]).map(([, d]) => d))) ?? 1;
+        allDensityMaxes.set(feature, maxVal);
+      }
     }
 
-    const cols = facets.length >= 3 ? 3 : facets.length;
-    const rowCount = Math.ceil(facets.length / cols);
-    // Use getBoundingClientRect for accurate rendered width, avoiding SVG overflow clipping
-    const containerW = container.getBoundingClientRect().width || container.clientWidth || 640;
-    const width = Math.max(containerW, 480);
-    const fW = Math.floor(width / cols);
-    const fH = 270;
-    const height = rowCount * fH + 8;
-    const m = { top: 42, right: 32, bottom: 48, left: 52 };
+    genreStats.forEach((gs, gi) => {
+      svg.append('text').attr('class', 'axis-label')
+        .attr('x', margin.left - 8)
+        .attr('y', margin.top + gi * cellHeight + cellHeight / 2 + 4)
+        .attr('text-anchor', 'end')
+        .style('font-size', '11px').style('fill', gs.color).style('font-weight', '600')
+        .text(gs.label);
 
-    const allV = facets.flatMap(([, v]) => v);
-    const xDom = state.sharedScales
-      ? (d3.extent(allV, (d) => d.tempo) as [number, number])
-      : null;
-    const yDom = state.sharedScales ? ([0, 1] as [number, number]) : null;
+      FEATURE_KEYS.forEach((feature, fi) => {
+        const cellX = margin.left + fi * cellWidth;
+        const cellY = margin.top + gi * cellHeight;
+        const pad = { top: 8, right: 8, bottom: 20, left: 8 };
+        const w = cellWidth - pad.left - pad.right;
+        const h = cellHeight - pad.top - pad.bottom;
 
-    const svg = d3
-      .select(container)
-      .append('svg')
-      .attr('width', width)
-      .attr('height', height)
-      .attr('viewBox', `0 0 ${width} ${height}`);
+        const thresholds = d3.range(0, 1.01, 0.01);
+        const kde = kernelDensityEstimator(kernelEpanechnikov(0.1), thresholds);
+        const density = kde(gs.data[feature]);
 
-    facets.forEach(([genre, values], idx) => {
-      const col = idx % cols;
-      const row = Math.floor(idx / cols);
-      const iW = fW - m.left - m.right;
-      const iH = fH - m.top - m.bottom;
-      const pts = sample(values, state.sampleSize);
-      const color = GENRE_COLOR_MAP[genre];
+        const xScale = d3.scaleLinear().domain([0, 1]).range([0, w]);
+        const maxDensity = state.sharedScales
+          ? (allDensityMaxes.get(feature) ?? 1)
+          : (d3.max(density, ([, d]) => d) ?? 1);
+        const yScale = d3.scaleLinear().domain([0, maxDensity]).range([h, 0]);
 
-      const xSc = d3
-        .scaleLinear()
-        .domain(xDom ?? (d3.extent(values, (d) => d.tempo) as [number, number]))
-        .nice()
-        .range([0, iW]);
-      const ySc = d3
-        .scaleLinear()
-        .domain(yDom ?? (d3.extent(values, (d) => d.danceability) as [number, number]))
-        .nice()
-        .range([iH, 0]);
+        const cell = svg.append('g').attr('transform', `translate(${cellX + pad.left},${cellY + pad.top})`);
 
-      const facet = svg
-        .append('g')
-        .attr('transform', `translate(${col * fW + m.left},${row * fH + m.top})`);
+        const area = d3.area<[number, number]>().x(([x]) => xScale(x)).y0(h).y1(([, y]) => yScale(y)).curve(d3.curveBasis);
+        const line = d3.line<[number, number]>().x(([x]) => xScale(x)).y(([, y]) => yScale(y)).curve(d3.curveBasis);
 
-      // Facet background — theme-aware
-      facet
-        .insert('rect', ':first-child')
-        .attr('x', -m.left + 4)
-        .attr('y', -m.top + 4)
-        .attr('width', iW + m.left + m.right - 8)
-        .attr('height', iH + m.top + m.bottom - 8)
-        .attr('rx', 10)
-        .attr('fill', theme.panel)
-        .attr('stroke', theme.border)
-        .attr('stroke-width', 1);
+        cell.append('path').datum(density as [number, number][])
+          .attr('fill', gs.color).attr('opacity', 0.2).attr('d', area);
+        cell.append('path').datum(density as [number, number][])
+          .attr('fill', 'none').attr('stroke', gs.color).attr('stroke-width', 1.5).attr('d', line);
+        cell.append('rect').attr('width', w).attr('height', h)
+          .attr('fill', 'transparent')
+          .on('mouseover', (event) => {
+            const mean = d3.mean(gs.data[feature]) ?? 0;
+            const std = d3.deviation(gs.data[feature]) ?? 0;
+            tip.show(event, `<strong>${gs.label} - ${FEATURE_LABELS[feature]}</strong><br>Mean: ${mean.toFixed(3)}<br>Std: ${std.toFixed(3)}<br>N: ${gs.count.toLocaleString()}`);
+          })
+          .on('mousemove', (event) => tip.move(event))
+          .on('mouseout', () => tip.hide());
 
-      // Facet title
-      facet
-        .append('text')
-        .attr('y', -18)
-        .attr('fill', color)
-        .style('font-size', '11px')
-        .style('font-weight', '700')
-        .text(`${lbl.genreLabels[genre]}  —  ${d3.format(',')(values.length)} ${lbl.tracks}`);
+        if (gi === genreStats.length - 1) {
+          cell.append('text').attr('x', 0).attr('y', h + 14).attr('class', 'axis-label')
+            .style('font-size', '9px').style('fill', theme.textSecondary).text('0');
+          cell.append('text').attr('x', w).attr('y', h + 14).attr('text-anchor', 'end')
+            .attr('class', 'axis-label').style('font-size', '9px').style('fill', theme.textSecondary).text('1');
+        }
 
-      // Grid lines
-      facet
-        .append('g')
-        .attr('class', 'grid')
-        .call(
-          d3
-            .axisLeft(ySc)
-            .ticks(4)
-            .tickSize(-iW)
-            .tickFormat(() => ''),
-        )
-        .selectAll('line')
-        .attr('stroke', theme.border)
-        .attr('stroke-opacity', 0.4);
-
-      facet.select('.grid .domain').remove();
-
-      // Axes
-      facet
-        .append('g')
-        .attr('class', 'axis')
-        .attr('transform', `translate(0,${iH})`)
-        .call(d3.axisBottom(xSc).ticks(4));
-
-      facet.append('g').attr('class', 'axis').call(d3.axisLeft(ySc).ticks(4));
-
-      // Axis labels — Y only on left column, X on every panel
-      if (col === 0) {
-        facet
-          .append('text')
-          .attr('class', 'axis-label')
-          .attr('transform', 'rotate(-90)')
-          .attr('x', -iH / 2)
-          .attr('y', -40)
-          .attr('text-anchor', 'middle')
-          .text(lbl.axisY);
-      }
-      facet
-        .append('text')
-        .attr('class', 'axis-label')
-        .attr('x', iW / 2)
-        .attr('y', iH + 38)
-        .attr('text-anchor', 'middle')
-        .text(lbl.axisX);
-
-      facet
-        .selectAll<SVGCircleElement, ParsedTrack>('.point')
-        .data(pts, (d) => d.trackId)
-        .join('circle')
-        .attr('class', 'point')
-        .attr('cx', (d) => xSc(d.tempo))
-        .attr('cy', (d) => ySc(d.danceability))
-        .attr('r', 2.8)
-        .attr('fill', color)
-        .attr('opacity', 0.42)
-        .on('mouseenter', function (event, d) {
-          d3.select(this).attr('r', 6).attr('opacity', 1);
-          tip.show(
-            event,
-            `<div style="margin-bottom:0.35rem">
-              <strong style="font-size:0.9rem">${d.trackName}</strong>
-            </div>
-            <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.45rem">${d.artists}</div>
-            <div style="border-top:1px solid var(--border);padding-top:0.4rem;font-size:0.82rem">
-              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-                <span style="color:var(--muted)">${lbl.tip.tempo}</span>
-                <span class="tooltip-value">${d3.format('.1f')(d.tempo)} BPM</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-                <span style="color:var(--muted)">${lbl.tip.dance}</span>
-                <span class="tooltip-value">${d3.format('.2f')(d.danceability)}</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-                <span style="color:var(--muted)">${lbl.tip.pop}</span>
-                <span class="tooltip-value">${d.popularity}</span>
-              </div>
-            </div>`,
-          );
-        })
-        .on('mousemove', (event) => tip.move(event))
-        .on('mouseleave', function () {
-          d3.select(this).attr('r', 2.8).attr('opacity', 0.42);
-          tip.hide();
-        });
-
-      // Regression line — dashed, using full dataset (not sample)
-      const fit = linReg(values);
-      if (fit) {
-        facet
-          .append('path')
-          .datum(xSc.domain().map((x) => ({ x, y: fit.intercept + fit.slope * x })))
-          .attr('fill', 'none')
-          .attr('stroke', color)
-          .attr('stroke-width', 1.8)
-          .attr('stroke-dasharray', '5,4')
-          .attr('stroke-linecap', 'round')
-          .attr('opacity', 0.85)
-          .attr(
-            'd',
-            d3
-              .line<{ x: number; y: number }>()
-              .x((d) => xSc(d.x))
-              .y((d) => ySc(d.y))
-              .defined((d) => Number.isFinite(d.y)),
-          );
-
-        // Pearson r badge
-        const rText = `r = ${d3.format('+.2f')(fit.r)}`;
-        const badgeW = rText.length * 7.2 + 10;
-        const badgeG = facet.append('g').attr('transform', `translate(${iW - badgeW - 2},2)`);
-
-        badgeG
-          .append('rect')
-          .attr('width', badgeW)
-          .attr('height', 18)
-          .attr('rx', 3)
-          .attr('fill', theme.panel)
-          .attr('stroke', color)
-          .attr('stroke-width', 1)
-          .attr('opacity', 0.9);
-
-        badgeG
-          .append('text')
-          .attr('x', 5)
-          .attr('y', 13)
-          .attr('fill', color)
-          .style('font-size', '10.5px')
-          .style('font-weight', '700')
-          .text(rText);
-      }
+        if (fi === 0) {
+          cell.append('line').attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', h)
+            .attr('stroke', theme.border).attr('stroke-opacity', 0.3).attr('stroke-width', 0.5);
+        }
+        cell.append('line').attr('x1', 0).attr('x2', w).attr('y1', h).attr('y2', h)
+          .attr('stroke', theme.border).attr('stroke-opacity', 0.4).attr('stroke-width', 0.5);
+      });
     });
   }
 
   render();
 
   return {
-    update(s) { state = s; render(); },
-    setLang(l) { _lang = l; render(); },
     resize: render,
     destroy: () => { container.innerHTML = ''; },
+    update: (newState) => {
+      state = { ...state, ...newState };
+      render();
+    },
   };
 }
-
-export { GENRE_COLOR_MAP as COLOR_SCALE };

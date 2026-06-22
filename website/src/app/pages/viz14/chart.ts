@@ -1,150 +1,193 @@
-import type { Lang } from '../../core/services/lang.service';
 import * as d3 from 'd3';
 import { TrackRow } from '../../core/models/track-row';
-import { CHART, styleAxis } from '../../viz-shared/utils/chart-theme';
+import { getChartTheme } from '../../viz-shared/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
 
-const HEX_PAIRS_FR = [
-  { xKey: 'energy'       as const, yKey: 'loudness'   as const, xLabel: 'Énergie',      yLabel: 'Volume (dB)',   xDom: [0,1]    as [number,number], yDom: [-60,0]  as [number,number] },
-  { xKey: 'danceability' as const, yKey: 'valence'    as const, xLabel: 'Dansabilité',   yLabel: 'Valence',       xDom: [0,1]    as [number,number], yDom: [0,1]    as [number,number] },
-  { xKey: 'acousticness' as const, yKey: 'energy'     as const, xLabel: 'Acoustique',    yLabel: 'Énergie',       xDom: [0,1]    as [number,number], yDom: [0,1]    as [number,number] },
-  { xKey: 'tempo'        as const, yKey: 'popularity' as const, xLabel: 'Tempo (BPM)',   yLabel: 'Popularité',    xDom: [50,220] as [number,number], yDom: [0,100]  as [number,number] },
-] as const;
-const HEX_PAIRS_EN = [
-  { xKey: 'energy'       as const, yKey: 'loudness'   as const, xLabel: 'Energy',        yLabel: 'Loudness (dB)', xDom: [0,1]    as [number,number], yDom: [-60,0]  as [number,number] },
-  { xKey: 'danceability' as const, yKey: 'valence'    as const, xLabel: 'Danceability',   yLabel: 'Valence',       xDom: [0,1]    as [number,number], yDom: [0,1]    as [number,number] },
-  { xKey: 'acousticness' as const, yKey: 'energy'     as const, xLabel: 'Acoustic',       yLabel: 'Energy',        xDom: [0,1]    as [number,number], yDom: [0,1]    as [number,number] },
-  { xKey: 'tempo'        as const, yKey: 'popularity' as const, xLabel: 'Tempo (BPM)',    yLabel: 'Popularity',    xDom: [50,220] as [number,number], yDom: [0,100]  as [number,number] },
-] as const;
-export const HEX_PAIRS = HEX_PAIRS_FR;
-export function getHexPairs(lang: Lang) { return lang === 'fr' ? HEX_PAIRS_FR as readonly HexPairDef[] : HEX_PAIRS_EN as readonly HexPairDef[]; }
-const L = (lang: Lang) => lang === 'fr' ? {
-  pairs: HEX_PAIRS_FR as readonly HexPairDef[],
-  title: (y: string, x: string) => `Densité hexagonale : ${y} vs ${x}`,
-  hint: 'Chaque hexagone représente la concentration de titres dans cette zone. Plus il est foncé, plus il contient de titres.',
-  tracks: 'Titres',
-} : {
-  pairs: HEX_PAIRS_EN as readonly HexPairDef[],
-  title: (y: string, x: string) => `Hexagonal Density: ${y} vs ${x}`,
-  hint: 'Each hexagon shows how many tracks fall in that area. Darker hexagons indicate a higher concentration of tracks.',
-  tracks: 'Tracks',
-};
+// ─── Pair Definitions ─────────────────────────────────────────────────────────
+
+export interface HexPair {
+  xKey: string;
+  yKey: string;
+  xLabel: string;
+  yLabel: string;
+  xDomain: [number, number];
+  yDomain: [number, number];
+  title: string;
+}
+
+export const HEX_PAIRS: HexPair[] = [
+  {
+    xKey: 'energy', yKey: 'loudness',
+    xLabel: 'Energy', yLabel: 'Loudness (dB)',
+    xDomain: [0, 1], yDomain: [-40, 0],
+    title: 'Energy × Loudness density',
+  },
+  {
+    xKey: 'danceability', yKey: 'valence',
+    xLabel: 'Danceability', yLabel: 'Valence',
+    xDomain: [0, 1], yDomain: [0, 1],
+    title: 'Danceability × Valence density',
+  },
+  {
+    xKey: 'acousticness', yKey: 'energy',
+    xLabel: 'Acousticness', yLabel: 'Energy',
+    xDomain: [0, 1], yDomain: [0, 1],
+    title: 'Acousticness × Energy density',
+  },
+  {
+    xKey: 'tempo', yKey: 'danceability',
+    xLabel: 'Tempo (BPM)', yLabel: 'Danceability',
+    xDomain: [50, 220], yDomain: [0, 1],
+    title: 'Tempo × Danceability density',
+  },
+];
 
 export type HexPairIdx = 0 | 1 | 2 | 3;
 
-interface HexPairDef { xKey: keyof TrackRow; yKey: keyof TrackRow; xLabel: string; yLabel: string; xDom: [number, number]; yDom: [number, number] }
-interface Hexbin { x: number; y: number; count: number; xi: number; yi: number }
-
-const HEXBIN_COLS = 40;
-const HEXBIN_ROWS = 40;
-
-function hexbinData(rows: TrackRow[], cfg: HexPairDef): Hexbin[] {
-  const pts = rows
-    .map((r) => ({ x: Number(r[cfg.xKey]), y: Number(r[cfg.yKey]) }))
-    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
-
-  const counts = new Map<string, number>();
-  pts.forEach((p) => {
-    const xi = Math.min(HEXBIN_COLS - 1, Math.max(0,
-      Math.floor((p.x - cfg.xDom[0]) / (cfg.xDom[1] - cfg.xDom[0]) * HEXBIN_COLS)));
-    const yi = Math.min(HEXBIN_ROWS - 1, Math.max(0,
-      Math.floor((p.y - cfg.yDom[0]) / (cfg.yDom[1] - cfg.yDom[0]) * HEXBIN_ROWS)));
-    const k = `${xi},${yi}`;
-    counts.set(k, (counts.get(k) || 0) + 1);
-  });
-
-  return [...counts.entries()].map(([k, count]) => {
-    const [xi, yi] = k.split(',').map(Number);
-    const xR = (cfg.xDom[1] - cfg.xDom[0]) / HEXBIN_COLS;
-    const yR = (cfg.yDom[1] - cfg.yDom[0]) / HEXBIN_ROWS;
-    return { xi, yi, count, x: cfg.xDom[0] + (xi + 0.5) * xR, y: cfg.yDom[0] + (yi + 0.5) * yR };
-  });
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface Viz14Chart {
   setPair: (idx: HexPairIdx) => void;
-  setLang: (l: Lang) => void;
   resize: () => void;
   destroy: () => void;
 }
 
-export function createViz14Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz14Chart {
-  let pairIdx: HexPairIdx = 0, _lang = initLang;
+// ─── Chart Factory ────────────────────────────────────────────────────────────
+
+export function createViz14Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip): Viz14Chart {
+  let pairIdx: HexPairIdx = 0;
 
   function render() {
     container.innerHTML = '';
-    const lbl  = L(_lang);
-    const cfg  = lbl.pairs[pairIdx];
-    const bins = hexbinData(rows, cfg);
-    const maxC = d3.max(bins, (d) => d.count) || 1;
+    const theme = getChartTheme();
+    const pair = HEX_PAIRS[pairIdx];
 
-    const width  = Math.max(580, container.clientWidth || 840);
-    const height = Math.max(480, container.clientHeight || 540);
-    const margin = { top: 72, right: 80, bottom: 52, left: 68 };
-    const iW     = width  - margin.left - margin.right;
-    const iH     = height - margin.top  - margin.bottom;
+    const margin = { top: 56, right: 80, bottom: 64, left: 64 };
+    const W = Math.max(520, container.clientWidth  || 800);
+    const H = Math.max(460, container.clientHeight || 540);
+    const innerW = W - margin.left - margin.right;
+    const innerH = H - margin.top  - margin.bottom;
 
-    const x    = d3.scaleLinear().domain(cfg.xDom).range([0, iW]);
-    const y    = d3.scaleLinear().domain(cfg.yDom).range([iH, 0]);
-    const hexR = Math.min(iW / HEXBIN_COLS, iH / HEXBIN_ROWS) * 0.6;
-    const colorScale = d3.scaleSequential(d3.interpolateInferno).domain([0, maxC]);
+    const x = d3.scaleLinear().domain(pair.xDomain).range([0, innerW]);
+    const y = d3.scaleLinear().domain(pair.yDomain).range([innerH, 0]);
 
-    // Hexagon path generator
-    const hexPath = (r: number) => {
-      const pts = d3.range(6).map((i) => {
-        const a = (Math.PI / 3) * i - Math.PI / 6;
-        return [r * Math.cos(a), r * Math.sin(a)];
+    // Hexbin setup
+    const hexRadius = Math.min(innerW, innerH) / 22;
+
+    type HexRow = { 0: number; 1: number; [k: string]: unknown };
+    const hexbin = (d3 as unknown as { hexbin: (opts?: { radius: number; extent: [[number, number], [number, number]] }) => { (data: HexRow[]): HexRow[][]; hexagon: (r?: number) => string } }).hexbin
+      ? (d3 as unknown as { hexbin: (opts: { radius: number; extent: [[number, number], [number, number]] }) => { (data: HexRow[]): HexRow[][]; hexagon: (r?: number) => string } }).hexbin({
+          radius: hexRadius,
+          extent: [[0, 0], [innerW, innerH]],
+        })
+      : null;
+
+    const pts: HexRow[] = rows.map((r) => {
+      const xv = Number(r[pair.xKey as keyof TrackRow]);
+      const yv = Number(r[pair.yKey as keyof TrackRow]);
+      if (!Number.isFinite(xv) || !Number.isFinite(yv)) return null;
+      if (xv < pair.xDomain[0] || xv > pair.xDomain[1]) return null;
+      if (yv < pair.yDomain[0] || yv > pair.yDomain[1]) return null;
+      const row: HexRow = { 0: x(xv), 1: y(yv), xv, yv, popularity: Number(r.popularity) };
+      return row;
+    }).filter((d): d is HexRow => d !== null);
+
+    const svg = d3.select(container).append('svg')
+      .attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
+
+    svg.append('text').attr('class', 'chart-title')
+      .attr('x', W / 2).attr('y', 26).attr('text-anchor', 'middle')
+      .text(pair.title);
+
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Clip path
+    const clipId = `hex-clip-${pairIdx}`;
+    svg.append('defs').append('clipPath').attr('id', clipId)
+      .append('rect').attr('width', innerW).attr('height', innerH);
+
+    const chartG = g.append('g').attr('clip-path', `url(#${clipId})`);
+
+    if (hexbin) {
+      const bins = hexbin(pts);
+      const maxCount = d3.max(bins, (b) => b.length) ?? 1;
+      const colorScale = d3.scaleSequential().domain([0, maxCount]).interpolator(d3.interpolateYlOrRd);
+
+      chartG.selectAll<SVGPathElement, HexRow[]>('.hexagon')
+        .data(bins).join('path').attr('class', 'hexagon')
+        .attr('d', hexbin.hexagon())
+        .attr('transform', (b) => `translate(${b['x'] ?? b[0]},${b['y'] ?? b[1]})`)
+        .attr('fill', (b) => colorScale(b.length))
+        .attr('stroke', theme.panel).attr('stroke-width', 0.5)
+        .on('mouseover', function (event, b) {
+          d3.select(this).attr('opacity', 0.7);
+          const fmt2 = d3.format('.2f');
+          const fmtN = d3.format(',');
+          const avgPop = d3.mean(b, (d: HexRow) => Number(d['popularity'])) ?? 0;
+          const xv = x.invert(b[0]);
+          const yv = y.invert(b[1]);
+          tip.show(event, `
+            <div style="font-size:0.84rem;margin-bottom:0.4rem">
+              <strong>${pair.xLabel}: ${fmt2(xv)}</strong><br>
+              <strong>${pair.yLabel}: ${fmt2(yv)}</strong>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:0.4rem;font-size:0.82rem">
+              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+                <span style="color:var(--muted)">Tracks</span>
+                <span class="tooltip-value">${fmtN(b.length)}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+                <span style="color:var(--muted)">Avg. popularity</span>
+                <span class="tooltip-value">${fmt2(avgPop)}</span>
+              </div>
+            </div>`);
+        })
+        .on('mousemove', (event) => tip.move(event))
+        .on('mouseout', function () { d3.select(this).attr('opacity', 1); tip.hide(); });
+
+      // Color legend
+      const legendH2 = innerH * 0.5;
+      const legendW = 12;
+      const legG = g.append('g').attr('transform', `translate(${innerW + 18},${(innerH - legendH2) / 2})`);
+
+      const defs2 = svg.select('defs');
+      const gradId = `hex-grad-${pairIdx}`;
+      const grad = defs2.append('linearGradient').attr('id', gradId)
+        .attr('x1', '0%').attr('y1', '100%').attr('x2', '0%').attr('y2', '0%');
+      d3.range(0, 1.01, 0.1).forEach((t) => {
+        grad.append('stop').attr('offset', `${t * 100}%`).attr('stop-color', colorScale(t * maxCount));
       });
-      return `M${pts.map((p) => p.join(',')).join('L')}Z`;
-    };
 
-    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
-    const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+      legG.append('rect').attr('width', legendW).attr('height', legendH2)
+        .attr('fill', `url(#${gradId})`).attr('rx', 2);
 
-    svg.append('text').attr('x', margin.left).attr('y', 22).attr('fill', CHART.text).attr('font-size', 15).attr('font-weight', 700).text(lbl.title(cfg.yLabel, cfg.xLabel));
-    svg.append('text').attr('x', margin.left).attr('y', 42).attr('fill', CHART.muted).attr('font-size', 11).text(lbl.hint);
+      const legScale = d3.scaleLinear().domain([0, maxCount]).range([legendH2, 0]);
+      legG.append('g').attr('class', 'axis').attr('transform', `translate(${legendW},0)`)
+        .call(d3.axisRight(legScale).ticks(4).tickFormat(d3.format('.0f')));
+      legG.append('text').attr('class', 'axis-label')
+        .attr('x', legendW / 2).attr('y', -8).attr('text-anchor', 'middle')
+        .style('font-size', '9px').text('Tracks');
 
-    g.selectAll('.hex').data(bins).join('path').attr('class', 'hex')
-      .attr('d', hexPath(hexR))
-      .attr('transform', (d) => `translate(${x(d.x)},${y(d.y)})`)
-      .attr('fill', (d) => colorScale(d.count))
-      .attr('stroke', 'none')
-      .on('mouseover', (event, d) => {
-        tip.show(event,
-          `<div>${d.count.toLocaleString()} ${lbl.tracks}</div>
-           <div>${cfg.xLabel} : <span class="tooltip-value">${d3.format('.2f')(d.x)}</span></div>
-           <div>${cfg.yLabel} : <span class="tooltip-value">${d3.format('.2f')(d.y)}</span></div>`);
-      })
-      .on('mousemove', (event) => tip.move(event))
-      .on('mouseout', () => tip.hide());
+    } else {
+      // Fallback: scatter
+      chartG.selectAll<SVGCircleElement, HexRow>('.dot')
+        .data(pts.length > 3000 ? pts.filter((_, i) => i % Math.ceil(pts.length / 3000) === 0) : pts)
+        .join('circle').attr('class', 'dot')
+        .attr('cx', (d) => d[0]).attr('cy', (d) => d[1])
+        .attr('r', 2.5).attr('fill', '#4C78A8').attr('opacity', 0.25);
+    }
 
-    const xAx = g.append('g').attr('class', 'axis').attr('transform', `translate(0,${iH})`).call(d3.axisBottom(x).ticks(6));
-    const yAx = g.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6));
-    styleAxis(xAx as never);
-    styleAxis(yAx as never);
-
-    g.append('text').attr('class', 'axis-label').attr('x', iW / 2).attr('y', iH + 40)
-      .attr('text-anchor', 'middle').attr('fill', CHART.secondary).text(cfg.xLabel);
-    g.append('text').attr('class', 'axis-label').attr('transform', 'rotate(-90)')
-      .attr('x', -iH / 2).attr('y', -52).attr('text-anchor', 'middle').attr('fill', CHART.secondary).text(cfg.yLabel);
-
-    // Color legend (vertical)
-    const lH  = 120;
-    const lW  = 14;
-    const lG  = svg.append('g').attr('transform', `translate(${width - margin.right + 14},${margin.top})`);
-    const lSc = d3.scaleLinear().domain([0, maxC]).range([lH, 0]);
-    lG.selectAll('rect').data(d3.range(lH)).join('rect')
-      .attr('y', (_, i) => i).attr('width', lW).attr('height', 1)
-      .attr('fill', (d) => colorScale(lSc.invert(d)));
-    lG.append('g').attr('transform', `translate(${lW + 4},0)`)
-      .call(d3.axisRight(lSc).ticks(4).tickFormat(d3.format('~s')));
-    lG.append('text').attr('x', 0).attr('y', -8).attr('fill', CHART.muted).attr('font-size', 10).text(lbl.tracks);
+    // Axes
+    g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(x).ticks(6));
+    g.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6));
+    g.append('text').attr('class', 'axis-label').attr('x', innerW / 2).attr('y', innerH + 46).attr('text-anchor', 'middle').text(pair.xLabel);
+    g.append('text').attr('class', 'axis-label').attr('transform', 'rotate(-90)').attr('x', -innerH / 2).attr('y', -50).attr('text-anchor', 'middle').text(pair.yLabel);
   }
 
   render();
+
   return {
-    setPair(idx) { pairIdx = idx; render(); },
-    setLang(l) { _lang = l; render(); },
+    setPair: (idx) => { pairIdx = idx; render(); },
     resize: render,
     destroy: () => { container.innerHTML = ''; },
   };

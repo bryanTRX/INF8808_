@@ -1,274 +1,273 @@
 import * as d3 from 'd3';
-import type { Lang } from '../../core/services/lang.service';
 import { TrackRow } from '../../core/models/track-row';
 import { getChartTheme } from '../../viz-shared/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
 
-export interface ArtistTrack {
-  trackId: string;
-  trackName: string;
-  artist: string;
-  popularity: number;
-  album: string;
-  y: number;
-}
+// ─── Labels ───────────────────────────────────────────────────────────────────
+
+const LBL = {
+  title: 'Similar Tracks Similarity Map',
+  subtitle: 'Showing the audio-feature neighbourhood of the selected track',
+  xLabel: 'Dimension 1 (PCA)',
+  yLabel: 'Dimension 2 (PCA)',
+  tipArtist: 'Artist',
+  tipPop: 'Popularity',
+  tipSimilarity: 'Similarity',
+};
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface TrackSearchResult {
   trackId: string;
-  trackName: string;
+  title: string;
   artist: string;
   popularity: number;
 }
 
-const L = (lang: Lang) => lang === 'fr' ? {
-  title: (artist: string) => `Popularité du catalogue de ${artist}`,
-  hint: 'Chaque point représente un titre. Sa position indique son score de popularité Spotify.',
-  axisX: 'Popularité Spotify (0–100)',
-  avgLabel: 'Moy. artiste',
-  selectedLabel: 'Titre sélectionné',
-  tracks: 'titres',
-  tip: { pop: 'Popularité', album: 'Album', artist: 'Artiste' },
-  noArtist: 'Recherchez un titre pour afficher le catalogue de son artiste.',
-} : {
-  title: (artist: string) => `Popularity within ${artist}'s catalog`,
-  hint: 'Each dot represents one track. Its horizontal position shows the Spotify popularity score.',
-  axisX: 'Spotify Popularity (0–100)',
-  avgLabel: 'Artist avg.',
-  selectedLabel: 'Selected track',
-  tracks: 'tracks',
-  tip: { pop: 'Popularity', album: 'Album', artist: 'Artist' },
-  noArtist: 'Search for a track to display its artist\'s catalog.',
-};
-
-function dodge(points: ArtistTrack[], radius: number, x: (p: ArtistTrack) => number): void {
-  const sorted = points.slice().sort((a, b) => a.popularity - b.popularity);
-  const placed: { cx: number; cy: number }[] = [];
-  const r2 = radius * 2;
-  sorted.forEach((p) => {
-    const cx = x(p);
-    let cy = 0;
-    let row = 0;
-    while (true) {
-      const cy1 = row === 0 ? 0 : (row % 2 === 0 ? 1 : -1) * Math.ceil(row / 2) * r2;
-      const ok = placed.every(({ cx: ox, cy: oy }) => {
-        const dx = cx - ox, dy = cy1 - oy;
-        return dx * dx + dy * dy >= r2 * r2;
-      });
-      if (ok) { cy = cy1; break; }
-      row++;
-      if (row > 300) { cy = (Math.random() - 0.5) * r2 * 10; break; }
-    }
-    p.y = cy;
-    placed.push({ cx, cy });
-  });
-}
-
 export interface Viz11Chart {
-  setQuery: (artist: string, highlightId: string | null, minPop: number) => void;
-  setLang: (l: Lang) => void;
+  setQuery: (artist: string, trackId: string, minPop: number) => void;
   resize: () => void;
   destroy: () => void;
 }
 
-export function buildTrackIndex(rows: TrackRow[]): TrackSearchResult[] {
-  const seen = new Set<string>();
-  return rows
-    .map((r): TrackSearchResult | null => {
-      const id = String(r.track_id || '');
-      const name = String(r.track_name || '').trim();
-      const artist = String(r.artists || '').split(';')[0].trim();
-      const pop = Number(r.popularity);
-      if (!name || !artist || !Number.isFinite(pop) || seen.has(id)) return null;
-      seen.add(id);
-      return { trackId: id, trackName: name, artist, popularity: pop };
-    })
-    .filter((d): d is TrackSearchResult => d !== null);
+// ─── Feature Extraction ───────────────────────────────────────────────────────
+
+const SIM_FEATURES = [
+  'danceability', 'energy', 'acousticness', 'valence',
+  'speechiness', 'instrumentalness',
+] as const;
+
+type SimFeature = (typeof SIM_FEATURES)[number];
+
+interface TrackVec {
+  trackId: string;
+  title: string;
+  artist: string;
+  popularity: number;
+  features: number[];
 }
 
-export function createViz11Chart(
-  container: HTMLElement,
-  rows: TrackRow[],
-  tip: VizTooltip,
-  initLang: Lang = 'fr',
-): Viz11Chart {
-  let _lang = initLang;
+function norm(v: number[]): number[] {
+  const mag = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
+  return mag === 0 ? v : v.map((x) => x / mag);
+}
 
-  // Pre-group tracks by primary artist (lowercase key)
-  const artistMap = new Map<string, ArtistTrack[]>();
+function cosineSim(a: number[], b: number[]): number {
+  return a.reduce((s, x, i) => s + x * b[i], 0);
+}
+
+export function buildTrackIndex(rows: TrackRow[]): TrackSearchResult[] {
+  const seen = new Set<string>();
+  return rows.map((r) => {
+    const id = String(r.track_id || '');
+    if (!id || seen.has(id)) return null;
+    seen.add(id);
+    return {
+      trackId: id,
+      title: String(r.track_name || ''),
+      artist: String(r.artists || ''),
+      popularity: Number(r.popularity) || 0,
+    };
+  }).filter((t): t is TrackSearchResult => t !== null);
+}
+
+// ─── Simple 2D PCA (Oja / power iteration) ───────────────────────────────────
+
+function pca2d(vectors: number[][]): Array<[number, number]> {
+  const n = vectors.length;
+  const d = vectors[0].length;
+
+  const mean = new Array<number>(d).fill(0);
+  vectors.forEach((v) => v.forEach((x, j) => { mean[j] += x / n; }));
+  const centered = vectors.map((v) => v.map((x, j) => x - mean[j]));
+
+  function powerIter(vecs: number[][], prevDir?: number[]): number[] {
+    let u = prevDir ?? vecs[0].slice();
+    for (let iter = 0; iter < 80; iter++) {
+      const next = new Array<number>(d).fill(0);
+      vecs.forEach((v) => {
+        const proj = v.reduce((s, x, j) => s + x * u[j], 0);
+        v.forEach((x, j) => { next[j] += proj * x; });
+      });
+      const mag = Math.sqrt(next.reduce((s, x) => s + x * x, 0));
+      u = mag === 0 ? next : next.map((x) => x / mag);
+    }
+    return u;
+  }
+
+  const pc1 = powerIter(centered);
+  const deflated = centered.map((v) => {
+    const proj = v.reduce((s, x, j) => s + x * pc1[j], 0);
+    return v.map((x, j) => x - proj * pc1[j]);
+  });
+  const pc2 = powerIter(deflated, pc1.slice().reverse());
+
+  return centered.map((v) => [
+    v.reduce((s, x, j) => s + x * pc1[j], 0),
+    v.reduce((s, x, j) => s + x * pc2[j], 0),
+  ]);
+}
+
+// ─── Chart Factory ────────────────────────────────────────────────────────────
+
+export function createViz11Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip): Viz11Chart {
+  // Build track vectors
+  const trackVecs = new Map<string, TrackVec>();
   rows.forEach((r) => {
-    const pop = Number(r.popularity);
-    if (!Number.isFinite(pop)) return;
-    const artist = String(r.artists || '').split(';')[0].trim();
-    if (!artist) return;
-    const key = artist.toLowerCase();
-    if (!artistMap.has(key)) artistMap.set(key, []);
-    artistMap.get(key)!.push({
-      trackId: String(r.track_id || ''),
-      trackName: String(r.track_name || '').trim(),
-      artist,
-      popularity: pop,
-      album: String(r.album_name || ''),
-      y: 0,
+    const id = String(r.track_id || '');
+    if (!id || trackVecs.has(id)) return;
+    const features = SIM_FEATURES.map((f) => {
+      const v = Number(r[f as keyof TrackRow]);
+      return Number.isFinite(v) ? v : 0;
+    });
+    trackVecs.set(id, {
+      trackId: id,
+      title: String(r.track_name || ''),
+      artist: String(r.artists || ''),
+      popularity: Number(r.popularity) || 0,
+      features,
     });
   });
 
+  const allVecs = [...trackVecs.values()];
+
   let currentArtist = '';
-  let currentHighlight: string | null = null;
+  let currentTrackId = '';
   let currentMinPop = 0;
 
-  function render() {
+  function getNeighbours(targetId: string, minPop: number, k = 60): { vec: TrackVec; sim: number }[] {
+    const target = trackVecs.get(targetId);
+    if (!target) return [];
+    const normTarget = norm(target.features);
+    return allVecs
+      .filter((v) => v.trackId !== targetId && v.popularity >= minPop)
+      .map((v) => ({ vec: v, sim: cosineSim(normTarget, norm(v.features)) }))
+      .sort((a, b) => d3.descending(a.sim, b.sim))
+      .slice(0, k);
+  }
+
+  function renderChart() {
     container.innerHTML = '';
-    const lbl = L(_lang);
     const theme = getChartTheme();
 
-    if (!currentArtist) {
-      d3.select(container).append('p')
-        .style('color', 'var(--muted)').style('font-size', '0.9rem')
-        .style('text-align', 'center').style('margin-top', '3rem')
-        .text(lbl.noArtist);
+    const target = trackVecs.get(currentTrackId);
+    if (!target) {
+      container.innerHTML = `<div class="chart-loading" style="text-align:center;color:var(--muted)">Pick an artist and track to explore</div>`;
       return;
     }
 
-    const key = currentArtist.toLowerCase();
-    const all = artistMap.get(key) ?? [];
-    const pts = all.filter((d) => d.popularity >= currentMinPop);
-    if (!pts.length) return;
+    const neighbours = getNeighbours(currentTrackId, currentMinPop);
+    const artistTracks = allVecs.filter(
+      (v) => v.artist.toLowerCase() === currentArtist.toLowerCase() &&
+        v.trackId !== currentTrackId && v.popularity >= currentMinPop,
+    ).slice(0, 20);
 
-    const width = Math.max(500, container.getBoundingClientRect().width || container.clientWidth || 700);
-    const radius = 5;
-    const margin = { top: 56, right: 24, bottom: 52, left: 56 };
-    const iW = width - margin.left - margin.right;
+    const allPoints = [target, ...neighbours.map((n) => n.pc = undefined as never || n.vec), ...artistTracks];
+    const simMap = new Map(neighbours.map((n) => [n.vec.trackId, n.sim]));
+    const artistSet = new Set(artistTracks.map((t) => t.trackId));
 
-    const x = d3.scaleLinear().domain([0, 100]).range([0, iW]);
-    dodge(pts, radius, (d) => x(d.popularity));
+    const allFeatures = allPoints.map((v) => v.features);
+    const coords = pca2d(allFeatures);
 
-    const yExt = d3.extent(pts, (d) => d.y) as [number, number];
-    const bandH = Math.abs(yExt[0]) + Math.abs(yExt[1]) + radius * 6;
-    const height = margin.top + bandH + margin.bottom;
-    const midY = margin.top + Math.abs(yExt[0]) + radius * 3;
+    const margin = { top: 52, right: 20, bottom: 56, left: 52 };
+    const W = Math.max(480, container.clientWidth || 700);
+    const H = Math.max(400, container.clientHeight || 520);
+    const innerW = W - margin.left - margin.right;
+    const innerH = H - margin.top - margin.bottom;
 
-    const avgPop = d3.mean(pts, (d) => d.popularity) ?? 0;
-    const highlighted = pts.find((d) => d.trackId === currentHighlight) ?? null;
+    const xExt = d3.extent(coords, ([x]) => x) as [number, number];
+    const yExt = d3.extent(coords, ([, y]) => y) as [number, number];
+    const pad = 0.15;
+    const xRange = xExt[1] - xExt[0];
+    const yRange = yExt[1] - yExt[0];
+
+    const x = d3.scaleLinear()
+      .domain([xExt[0] - xRange * pad, xExt[1] + xRange * pad])
+      .range([0, innerW]);
+    const y = d3.scaleLinear()
+      .domain([yExt[0] - yRange * pad, yExt[1] + yRange * pad])
+      .range([innerH, 0]);
 
     const svg = d3.select(container).append('svg')
-      .attr('width', width).attr('height', height)
-      .attr('viewBox', `0 0 ${width} ${height}`);
-    const g = svg.append('g').attr('transform', `translate(${margin.left},${midY})`);
+      .attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
 
-    // Title
     svg.append('text').attr('class', 'chart-title')
-      .attr('x', margin.left).attr('y', 22)
-      .text(lbl.title(currentArtist));
-
+      .attr('x', W / 2).attr('y', 24).attr('text-anchor', 'middle')
+      .text(LBL.title);
     svg.append('text').attr('class', 'chart-subtitle')
-      .attr('x', margin.left).attr('y', 40)
-      .attr('font-size', 11)
-      .text(`${pts.length} ${lbl.tracks}`);
+      .attr('x', W / 2).attr('y', 40).attr('text-anchor', 'middle')
+      .text(LBL.subtitle);
 
-    // Grid
-    g.append('g').attr('class', 'grid')
-      .call(d3.axisBottom(x).ticks(10).tickSize(-(bandH + radius * 2)).tickFormat(() => ''))
-      .attr('transform', `translate(0,${bandH / 2})`)
-      .call((s) => { s.select('.domain').remove(); s.selectAll('line').attr('stroke', theme.border).attr('stroke-opacity', 0.3); });
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Average reference line
-    g.append('line')
-      .attr('x1', x(avgPop)).attr('x2', x(avgPop))
-      .attr('y1', -bandH / 2 - radius).attr('y2', bandH / 2 + radius)
-      .attr('stroke', theme.muted).attr('stroke-dasharray', '5,4').attr('stroke-width', 1.5);
-    g.append('text').attr('class', 'axis-label')
-      .attr('x', x(avgPop) + 4).attr('y', -bandH / 2 - radius - 4)
-      .style('font-size', '10px').style('font-weight', '600')
-      .text(`${lbl.avgLabel} ${avgPop.toFixed(1)}`);
+    g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(x).ticks(4).tickFormat(() => ''));
+    g.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(4).tickFormat(() => ''));
+    g.append('text').attr('class', 'axis-label').attr('x', innerW / 2).attr('y', innerH + 38).attr('text-anchor', 'middle').text(LBL.xLabel);
+    g.append('text').attr('class', 'axis-label').attr('transform', 'rotate(-90)').attr('x', -innerH / 2).attr('y', -38).attr('text-anchor', 'middle').text(LBL.yLabel);
 
-    // Dots — non-highlighted first, then highlighted on top
-    const nonHighlighted = pts.filter((d) => d.trackId !== currentHighlight);
-    const hl = pts.filter((d) => d.trackId === currentHighlight);
+    const simColorScale = d3.scaleSequential().domain([0.7, 1]).interpolator(d3.interpolateBlues);
 
-    const renderDots = (data: ArtistTrack[], isHl: boolean) => {
-      g.selectAll(isHl ? '.bee-hl' : '.bee')
-        .data(data, (d) => (d as ArtistTrack).trackId)
-        .join('circle')
-        .attr('class', isHl ? 'bee-hl' : 'bee')
-        .attr('cx', (d) => x(d.popularity))
-        .attr('cy', (d) => d.y)
-        .attr('r', isHl ? radius + 2 : radius)
-        .attr('fill', isHl ? 'var(--accent)' : theme.bar)
-        .attr('stroke', isHl ? '#fff' : 'none')
-        .attr('stroke-width', isHl ? 2 : 0)
-        .attr('opacity', isHl ? 1 : 0.55)
-        .on('mouseover', (event, d) => {
-          d3.select(event.currentTarget as SVGCircleElement).attr('opacity', 1).attr('r', radius + 2);
-          tip.show(event,
-            `<div style="margin-bottom:0.35rem"><strong style="font-size:0.9rem">${d.trackName}</strong></div>
-            <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.4rem">${d.artist}</div>
-            <div style="border-top:1px solid var(--border);padding-top:0.4rem;font-size:0.82rem">
-              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-                <span style="color:var(--muted)">${lbl.tip.pop}</span>
-                <span class="tooltip-value">${d.popularity}</span>
-              </div>
-              ${d.album ? `<div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-                <span style="color:var(--muted)">${lbl.tip.album}</span>
-                <span style="color:var(--text)">${d.album}</span>
-              </div>` : ''}
-            </div>`);
-        })
-        .on('mousemove', (event) => tip.move(event))
-        .on('mouseout', (event, d) => {
-          const isHighlighted = d.trackId === currentHighlight;
-          d3.select(event.currentTarget as SVGCircleElement)
-            .attr('opacity', isHighlighted ? 1 : 0.55)
-            .attr('r', isHighlighted ? radius + 2 : radius);
-          tip.hide();
-        });
-    };
+    allPoints.forEach((vec, i) => {
+      const [cx, cy2] = coords[i];
+      const isTarget = vec.trackId === target.trackId;
+      const isArtist = artistSet.has(vec.trackId);
+      const sim = simMap.get(vec.trackId);
 
-    renderDots(nonHighlighted, false);
-    renderDots(hl, true);
+      const color = isTarget ? '#ef4444' : isArtist ? '#f59e0b' : sim != null ? simColorScale(sim) : '#6b7280';
+      const r = isTarget ? 8 : isArtist ? 5.5 : 4;
 
-    // Highlighted label
-    if (highlighted) {
-      g.append('text')
-        .attr('x', x(highlighted.popularity))
-        .attr('y', highlighted.y - radius - 6)
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'var(--accent)')
-        .style('font-size', '9px').style('font-weight', '700')
-        .text(highlighted.trackName.length > 20 ? highlighted.trackName.slice(0, 19) + '…' : highlighted.trackName);
-    }
+      const circle = g.append('circle')
+        .attr('cx', x(cx)).attr('cy', y(cy2))
+        .attr('r', r).attr('fill', color).attr('opacity', isTarget ? 1 : 0.72)
+        .attr('stroke', isTarget ? '#fff' : 'none').attr('stroke-width', isTarget ? 2 : 0);
 
-    // X axis
-    const xAx = g.append('g').attr('class', 'axis')
-      .attr('transform', `translate(0,${bandH / 2 + radius + 4})`)
-      .call(d3.axisBottom(x).ticks(10));
-    xAx.select('.domain').attr('stroke', theme.border);
-    xAx.selectAll('text').attr('fill', theme.muted);
-
-    g.append('text').attr('class', 'axis-label')
-      .attr('x', iW / 2).attr('y', bandH / 2 + radius + 40)
-      .attr('text-anchor', 'middle').text(lbl.axisX);
+      circle.on('mouseover', function (event) {
+        circle.attr('opacity', 1).attr('r', r + 2);
+        tip.show(event, `
+          <strong style="font-size:0.9rem">${vec.title}</strong>
+          <div style="border-top:1px solid var(--border);margin-top:0.4rem;padding-top:0.4rem;font-size:0.82rem">
+            <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+              <span style="color:var(--muted)">${LBL.tipArtist}</span>
+              <span class="tooltip-value">${vec.artist}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+              <span style="color:var(--muted)">${LBL.tipPop}</span>
+              <span class="tooltip-value">${vec.popularity}</span>
+            </div>
+            ${sim != null ? `<div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+              <span style="color:var(--muted)">${LBL.tipSimilarity}</span>
+              <span class="tooltip-value">${(sim * 100).toFixed(1)}%</span>
+            </div>` : ''}
+          </div>`);
+      })
+      .on('mousemove', (event) => tip.move(event))
+      .on('mouseout', function () { circle.attr('opacity', isTarget ? 1 : 0.72).attr('r', r); tip.hide(); });
+    });
 
     // Legend
-    const legG = svg.append('g').attr('transform', `translate(${width - 160},${margin.top - 10})`);
-    [[theme.bar, 0.55, radius, lbl.tracks], ['var(--accent)', 1, radius + 2, lbl.selectedLabel]].forEach(([color, op, r, label], i) => {
+    const legData = [
+      { color: '#ef4444', label: 'Selected track' },
+      { color: '#f59e0b', label: `Other tracks by artist` },
+      { color: simColorScale(0.85), label: 'Similar track' },
+    ];
+    const legG = g.append('g').attr('transform', `translate(${innerW - 160}, 4)`);
+    legData.forEach(({ color, label }, i) => {
       const row = legG.append('g').attr('transform', `translate(0,${i * 18})`);
-      row.append('circle').attr('r', r as number).attr('cx', 6).attr('cy', 6)
-        .attr('fill', color as string).attr('opacity', op as number);
-      row.append('text').attr('x', 16).attr('y', 10).attr('font-size', 10)
-        .attr('fill', theme.text).text(label as string);
+      row.append('circle').attr('cx', 6).attr('cy', 0).attr('r', 5).attr('fill', color).attr('opacity', 0.85);
+      row.append('text').attr('x', 14).attr('y', 4).attr('class', 'legend-label').style('font-size', '10.5px').text(label);
     });
   }
 
-  render();
+  renderChart();
+
   return {
-    setQuery(artist, highlightId, minPop) {
+    setQuery: (artist, trackId, minPop) => {
       currentArtist = artist;
-      currentHighlight = highlightId;
+      currentTrackId = trackId;
       currentMinPop = minPop;
-      render();
+      renderChart();
     },
-    setLang(l) { _lang = l; render(); },
-    resize: render,
+    resize: renderChart,
     destroy: () => { container.innerHTML = ''; },
   };
 }

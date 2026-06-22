@@ -1,11 +1,10 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
 import { createViz06Chart, Viz06Chart } from './chart';
-import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
 @Component({
@@ -16,24 +15,19 @@ import { VizLoadState } from '../../core/i18n/viz-load-state';
 })
 export class Viz06Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
-  readonly langService = inject(LangService);
   private dataService = inject(VizDataService);
   private controller?: Viz06Chart;
   private cleanupResize?: () => void;
   private cleanupTheme?: () => void;
   private tip = createTooltip();
 
-  constructor() {
-    effect(() => { const l = this.langService.lang(); this.controller?.setLang(l); });
-  }
-
   ngAfterViewInit() {
     this.dataService.loadDataset().subscribe({
       next: (rows) => {
         deferChartInit(() => {
-          this.controller = createViz06Chart(this.chartRef.nativeElement, rows, this.tip, this.langService.lang());
+          this.controller = createViz06Chart(this.chartRef.nativeElement, rows, this.tip);
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.controller?.resize());
           this.cleanupTheme = observeTheme(() => this.controller?.resize());
           this.loadState.setLoaded(rows.length);

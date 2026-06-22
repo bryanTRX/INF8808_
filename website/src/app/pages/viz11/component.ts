@@ -1,4 +1,11 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -6,7 +13,6 @@ import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
 import { buildTrackIndex, createViz11Chart, TrackSearchResult, Viz11Chart } from './chart';
-import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
 interface ArtistOption { name: string; trackCount: number }
@@ -20,8 +26,7 @@ interface ArtistOption { name: string; trackCount: number }
 export class Viz11Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
 
-  readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
   artists: ArtistOption[] = [];
   tracksForArtist: TrackSearchResult[] = [];
@@ -29,26 +34,19 @@ export class Viz11Component implements AfterViewInit, OnDestroy {
   selectedTrackId = '';
   minPop = 0;
 
+  readonly ui = {
+    artistLabel: 'Artist',
+    trackLabel: 'Track',
+    threshold: 'Min. pop.',
+    pickArtist: '— Pick an artist —',
+    pickTrack: '— Pick a track —',
+  };
+
   private dataService = inject(VizDataService);
   private controller?: Viz11Chart;
   private cleanupResize?: () => void;
   private cleanupTheme?: () => void;
   private tip = createTooltip();
-
-  constructor() {
-    effect(() => { const l = this.langService.lang(); this.controller?.setLang(l); });
-  }
-
-  get ui() {
-    const fr = this.langService.lang() === 'fr';
-    return {
-      artistLabel:  fr ? 'Artiste' : 'Artist',
-      trackLabel:   fr ? 'Titre' : 'Track',
-      threshold:    fr ? 'Pop. min.' : 'Min. pop.',
-      pickArtist:   fr ? '— Choisir un artiste —' : '— Pick an artist —',
-      pickTrack:    fr ? '— Choisir un titre —' : '— Pick a track —',
-    };
-  }
 
   ngAfterViewInit() {
     this.dataService.loadDataset().subscribe({
@@ -56,29 +54,24 @@ export class Viz11Component implements AfterViewInit, OnDestroy {
         deferChartInit(() => {
           const allTracks = buildTrackIndex(rows);
 
-          // Build artist list sorted by track count desc
           const countMap = new Map<string, number>();
           allTracks.forEach((t) => countMap.set(t.artist, (countMap.get(t.artist) ?? 0) + 1));
           this.artists = [...countMap.entries()]
             .sort((a, b) => b[1] - a[1])
             .map(([name, trackCount]) => ({ name, trackCount }));
 
-          // Store tracks per artist for quick lookup
           this._tracksByArtist = new Map<string, TrackSearchResult[]>();
           allTracks.forEach((t) => {
             if (!this._tracksByArtist.has(t.artist)) this._tracksByArtist.set(t.artist, []);
             this._tracksByArtist.get(t.artist)!.push(t);
           });
 
-          // Auto-select the first artist and its most popular track
           if (this.artists.length) {
             this.selectedArtist = this.artists[0].name;
             this.onArtistChange(true);
           }
 
-          this.controller = createViz11Chart(
-            this.chartRef.nativeElement, rows, this.tip, this.langService.lang(),
-          );
+          this.controller = createViz11Chart(this.chartRef.nativeElement, rows, this.tip);
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.controller?.resize());
           this.cleanupTheme = observeTheme(() => this.controller?.resize());
           this.loadState.setLoaded(rows.length);

@@ -22,7 +22,7 @@
       </span>
       <select [(ngModel)]="selectedTrackId" (ngModelChange)="refresh()">
         @for (t of tracksForArtist; track t.trackId) {
-          <option [value]="t.trackId">{{ t.trackName }} ({{ t.popularity }})</option>
+          <option [value]="t.trackId">{{ t.title }} ({{ t.popularity }})</option>
         }
       </select>
     </div>

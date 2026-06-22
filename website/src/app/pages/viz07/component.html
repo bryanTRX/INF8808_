@@ -1,15 +1,13 @@
 <section class="viz-page">
   <p class="status">{{ loadState.status() }}</p>
 
-  <!-- Summary answer card -->
-  @if (answerHeadline()) {
+  @if (answerHeadline) {
     <div class="answer-card">
-      <p class="answer-headline">{{ answerHeadline() }}</p>
-      <p class="answer-body">{{ answerBody() }}</p>
+      <p class="answer-headline">{{ answerHeadline }}</p>
+      <p class="answer-body">{{ answerBody }}</p>
     </div>
   }
 
-  <!-- Stats row -->
   @if (stats.length) {
     <div class="side-panel stats-row" style="margin-bottom:1rem">
       @for (s of stats; track s.label) {

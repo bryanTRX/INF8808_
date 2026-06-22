@@ -1,6 +1,3 @@
-import type { Lang } from '../core/services/lang.service';
-import { STORY_PROLOGUE_FR, VIZ_CATALOG_FR } from './catalog.fr';
-
 export interface VizEntry {
   id: number;
   anchor: string;
@@ -133,10 +130,10 @@ export const VIZ_CATALOG: VizEntry[] = [
   },
 ];
 
-export function getStoryPrologue(lang: Lang) {
-  return lang === 'fr' ? STORY_PROLOGUE_FR : STORY_PROLOGUE;
+export function getStoryPrologue() {
+  return STORY_PROLOGUE;
 }
 
-export function getVizCatalog(lang: Lang): VizEntry[] {
-  return lang === 'fr' ? VIZ_CATALOG_FR : VIZ_CATALOG;
+export function getVizCatalog(): VizEntry[] {
+  return VIZ_CATALOG;
 }

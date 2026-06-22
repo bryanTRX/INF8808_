@@ -1,6 +1,5 @@
-import { Component, Input, computed, inject } from '@angular/core';
-import { appStrings } from '../../core/i18n/app-strings';
-import { LangService } from '../../core/services/lang.service';
+import { Component, Input } from '@angular/core';
+import { APP_STRINGS } from '../../core/i18n/app-strings';
 import { VizEntry } from '../viz-catalog';
 
 @Component({
@@ -16,7 +15,7 @@ import { VizEntry } from '../viz-catalog';
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 2a7 7 0 0 1 3.5 13.07V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.93A7 7 0 0 1 12 2zm2 17H10v1a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1z"/>
             </svg>
-            {{ strings().chapterInsight }}
+            {{ strings.chapterInsight }}
           </span>
           <p>{{ entry.insight }}</p>
         </div>
@@ -26,7 +25,7 @@ import { VizEntry } from '../viz-catalog';
               <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
-            {{ strings().chapterGuide }}
+            {{ strings.chapterGuide }}
           </span>
           <p>{{ entry.readingGuide }}</p>
         </div>
@@ -36,7 +35,5 @@ import { VizEntry } from '../viz-catalog';
 })
 export class VizChapterComponent {
   @Input({ required: true }) entry!: VizEntry;
-
-  private readonly langService = inject(LangService);
-  readonly strings = computed(() => appStrings(this.langService.lang()));
+  readonly strings = APP_STRINGS;
 }

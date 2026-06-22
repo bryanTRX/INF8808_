@@ -1,88 +1,33 @@
-import type { Lang } from '../../core/services/lang.service';
 import * as d3 from 'd3';
 import { TrackRow } from '../../core/models/track-row';
-import { CHART, styleAxis } from '../../viz-shared/utils/chart-theme';
+import { getChartTheme } from '../../viz-shared/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
 
-const AXES_FR = [
-  { key: 'popularity'       as const, label: 'Popularité',    domain: [0, 100]   as [number, number] },
-  { key: 'energy'           as const, label: 'Énergie',       domain: [0, 1]     as [number, number] },
-  { key: 'danceability'     as const, label: 'Dansabilité',   domain: [0, 1]     as [number, number] },
-  { key: 'valence'          as const, label: 'Valence',       domain: [0, 1]     as [number, number] },
-  { key: 'acousticness'     as const, label: 'Acoustique',    domain: [0, 1]     as [number, number] },
-  { key: 'speechiness'      as const, label: 'Parole',        domain: [0, 1]     as [number, number] },
-  { key: 'instrumentalness' as const, label: 'Instrumental',  domain: [0, 1]     as [number, number] },
-  { key: 'loudness'         as const, label: 'Volume (dB)',   domain: [-60, 0]   as [number, number] },
-  { key: 'tempo'            as const, label: 'Tempo (BPM)',   domain: [50, 220]  as [number, number] },
+// ─── Axis Definitions ─────────────────────────────────────────────────────────
+
+export type ScatterAxisKey = 'popularity' | 'energy' | 'danceability' | 'valence' | 'loudness' | 'tempo' | 'acousticness' | 'speechiness';
+
+interface AxisDef {
+  key: ScatterAxisKey;
+  label: string;
+  domain: [number, number];
+  fmt: (v: number) => string;
+}
+
+export const SCATTER_AXES: AxisDef[] = [
+  { key: 'popularity',    label: 'Popularity',    domain: [0, 100],  fmt: d3.format('.0f')  },
+  { key: 'energy',        label: 'Energy',        domain: [0, 1],    fmt: d3.format('.2f')  },
+  { key: 'danceability',  label: 'Danceability',  domain: [0, 1],    fmt: d3.format('.2f')  },
+  { key: 'valence',       label: 'Valence',        domain: [0, 1],   fmt: d3.format('.2f')  },
+  { key: 'loudness',      label: 'Loudness (dB)', domain: [-40, 0],  fmt: d3.format('.1f')  },
+  { key: 'tempo',         label: 'Tempo (BPM)',   domain: [50, 220], fmt: d3.format('.0f')  },
+  { key: 'acousticness',  label: 'Acousticness',  domain: [0, 1],    fmt: d3.format('.2f')  },
+  { key: 'speechiness',   label: 'Speechiness',   domain: [0, 0.6],  fmt: d3.format('.2f')  },
 ];
-const AXES_EN = [
-  { key: 'popularity'       as const, label: 'Popularity',    domain: [0, 100]   as [number, number] },
-  { key: 'energy'           as const, label: 'Energy',        domain: [0, 1]     as [number, number] },
-  { key: 'danceability'     as const, label: 'Danceability',  domain: [0, 1]     as [number, number] },
-  { key: 'valence'          as const, label: 'Valence',       domain: [0, 1]     as [number, number] },
-  { key: 'acousticness'     as const, label: 'Acoustic',      domain: [0, 1]     as [number, number] },
-  { key: 'speechiness'      as const, label: 'Speechiness',   domain: [0, 1]     as [number, number] },
-  { key: 'instrumentalness' as const, label: 'Instrumental',  domain: [0, 1]     as [number, number] },
-  { key: 'loudness'         as const, label: 'Loudness (dB)', domain: [-60, 0]   as [number, number] },
-  { key: 'tempo'            as const, label: 'Tempo (BPM)',   domain: [50, 220]  as [number, number] },
-];
-export const SCATTER_AXES = AXES_FR;
-export function getScatterAxes(lang: Lang) { return lang === 'fr' ? AXES_FR : AXES_EN; }
-const L = (lang: Lang) => lang === 'fr' ? {
-  axes: AXES_FR,
-  title: (y: string, x: string) => `${y} en fonction de ${x}`,
-  hint: (n: number) => `${d3.format(',')(n)} titres affichés. La couleur représente le genre. Sélectionnez les axes depuis les contrôles ci-dessus.`,
-  tip: { genre: 'Genre' },
-} : {
-  axes: AXES_EN,
-  title: (y: string, x: string) => `${y} as a function of ${x}`,
-  hint: (n: number) => `${d3.format(',')(n)} tracks shown. Color indicates genre. Select the axes from the controls above.`,
-  tip: { genre: 'Genre' },
-};
 
-export type ScatterAxisKey = (typeof SCATTER_AXES)[number]['key'];
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ScatterPoint {
-  id: string;
-  trackName: string;
-  artists: string;
-  genre: string;
-  values: Record<ScatterAxisKey, number>;
-}
-
-function classifyGenre(raw: unknown): string {
-  const t = String(raw || '').toLowerCase().split(';');
-  if (t.some((s) => s.includes('hip-hop') || s.includes('hip hop'))) return 'hip-hop';
-  if (t.some((s) => s === 'r-n-b' || s.includes('r&b') || s.includes('soul'))) return 'r&b';
-  for (const g of ['pop', 'rock', 'electronic', 'dance', 'indie', 'country', 'jazz', 'classical', 'latin', 'metal']) {
-    if (t.some((s) => s.includes(g))) return g;
-  }
-  return 'other';
-}
-
-const GENRE_COLOR = d3.scaleOrdinal(
-  ['pop','rock','hip-hop','electronic','dance','indie','r&b','country','jazz','classical','latin','metal','other'],
-  ['#2f80ed','#d1495b','#1b998b','#8f63c7','#f2a541','#537a5a','#ef476f','#7f5539','#118ab2','#6c757d','#e76f51','#343a40','#888888'],
-);
-
-function linReg(data: { x: number; y: number }[]) {
-  if (data.length < 2) return null;
-  const mx = d3.mean(data, (d) => d.x)!;
-  const my = d3.mean(data, (d) => d.y)!;
-  const num  = d3.sum(data, (d) => (d.x - mx) * (d.y - my));
-  const xVar = d3.sum(data, (d) => (d.x - mx) ** 2);
-  const yVar = d3.sum(data, (d) => (d.y - my) ** 2);
-  if (xVar === 0 || yVar === 0) return null;
-  const slope = num / xVar;
-  return { slope, intercept: my - slope * mx, r: num / Math.sqrt(xVar * yVar) };
-}
-
-function sample<T>(arr: T[], n: number): T[] {
-  if (arr.length <= n) return arr;
-  return d3.range(n).map((i) => arr[Math.floor((i * arr.length) / n)]);
-}
-
-export interface Viz13State {
+export interface Viz13Options {
   xAxis: ScatterAxisKey;
   yAxis: ScatterAxisKey;
   sampleSize: number;
@@ -91,117 +36,147 @@ export interface Viz13State {
 }
 
 export interface Viz13Chart {
-  update: (s: Viz13State) => void;
-  setLang: (l: Lang) => void;
   resize: () => void;
   destroy: () => void;
+  update: (opts: Partial<Viz13Options>) => void;
 }
 
-export function createViz13Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz13Chart {
-  let _lang = initLang;
-  const allPoints: ScatterPoint[] = rows
-    .map((r): ScatterPoint | null => {
-      const vals = {} as Record<ScatterAxisKey, number>;
-      for (const ax of SCATTER_AXES) {
-        const v = Number(r[ax.key]);
-        if (!Number.isFinite(v)) return null;
-        vals[ax.key] = v;
-      }
-      return {
-        id: String(r.track_id || ''),
-        trackName: String(r.track_name || ''),
-        artists: String(r.artists || ''),
-        genre: classifyGenre(r.track_genre),
-        values: vals,
-      };
-    })
-    .filter((d): d is ScatterPoint => d !== null);
+// ─── Chart Factory ────────────────────────────────────────────────────────────
 
-  let state: Viz13State = { xAxis: 'energy', yAxis: 'popularity', sampleSize: 2000, search: '', showTrend: true };
+export function createViz13Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip): Viz13Chart {
+  let opts: Viz13Options = {
+    xAxis: 'energy', yAxis: 'popularity', sampleSize: 2000, search: '', showTrend: true,
+  };
+
+  const axisMap = new Map(SCATTER_AXES.map((a) => [a.key, a]));
+
+  function prepare() {
+    const xDef = axisMap.get(opts.xAxis)!;
+    const yDef = axisMap.get(opts.yAxis)!;
+    const search = opts.search.toLowerCase();
+
+    const filtered = rows.filter((r) => {
+      const xv = Number(r[opts.xAxis as keyof TrackRow]);
+      const yv = Number(r[opts.yAxis as keyof TrackRow]);
+      if (!Number.isFinite(xv) || !Number.isFinite(yv)) return false;
+      if (xv < xDef.domain[0] || xv > xDef.domain[1]) return false;
+      if (yv < yDef.domain[0] || yv > yDef.domain[1]) return false;
+      if (search) {
+        const title  = String(r.track_name  || '').toLowerCase();
+        const artist = String(r.artists     || '').toLowerCase();
+        return title.includes(search) || artist.includes(search);
+      }
+      return true;
+    });
+
+    const step = filtered.length > opts.sampleSize ? Math.ceil(filtered.length / opts.sampleSize) : 1;
+    return filtered.filter((_, i) => i % step === 0);
+  }
 
   function render() {
     container.innerHTML = '';
-    const lbl  = L(_lang);
-    const xCfg = lbl.axes.find((a) => a.key === state.xAxis)!;
-    const yCfg = lbl.axes.find((a) => a.key === state.yAxis)!;
-    const srch = state.search.toLowerCase();
-    const pts  = sample(allPoints, state.sampleSize);
+    const theme = getChartTheme();
+    const data = prepare();
+    const xDef = axisMap.get(opts.xAxis)!;
+    const yDef = axisMap.get(opts.yAxis)!;
 
-    const width  = Math.max(600, container.clientWidth || 860);
-    const height = Math.max(480, container.clientHeight || 520);
-    const margin = { top: 64, right: 40, bottom: 52, left: 60 };
-    const iW     = width  - margin.left - margin.right;
-    const iH     = height - margin.top  - margin.bottom;
+    if (data.length === 0) {
+      container.innerHTML = `<div class="chart-loading" style="color:var(--muted)">No data matches your filters.</div>`;
+      return;
+    }
 
-    const x = d3.scaleLinear().domain(xCfg.domain).nice().range([0, iW]);
-    const y = d3.scaleLinear().domain(yCfg.domain).nice().range([iH, 0]);
+    const margin = { top: 52, right: 28, bottom: 60, left: 60 };
+    const W = Math.max(480, container.clientWidth  || 800);
+    const H = Math.max(420, container.clientHeight || 560);
+    const innerW = W - margin.left - margin.right;
+    const innerH = H - margin.top  - margin.bottom;
 
-    const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
-    const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+    const x = d3.scaleLinear().domain(xDef.domain).range([0, innerW]).clamp(true);
+    const y = d3.scaleLinear().domain(yDef.domain).range([innerH, 0]).clamp(true);
 
-    svg.append('text').attr('x', margin.left).attr('y', 22).attr('fill', CHART.text).attr('font-size', 15).attr('font-weight', 700).text(lbl.title(yCfg.label, xCfg.label));
-    svg.append('text').attr('x', margin.left).attr('y', 42).attr('fill', CHART.muted).attr('font-size', 11).text(lbl.hint(pts.length));
+    const svg = d3.select(container).append('svg')
+      .attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
 
-    // Grids
+    svg.append('text').attr('class', 'chart-title')
+      .attr('x', W / 2).attr('y', 24).attr('text-anchor', 'middle')
+      .text(`${yDef.label} vs ${xDef.label}`);
+    svg.append('text').attr('class', 'chart-subtitle')
+      .attr('x', W / 2).attr('y', 40).attr('text-anchor', 'middle')
+      .text(`${d3.format(',')(data.length)} tracks`);
+
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
     g.append('g').attr('class', 'grid')
-      .call(d3.axisLeft(y).tickSize(-iW).tickFormat(() => '').ticks(6) as never)
-      .call((s) => s.select('.domain').remove())
-      .selectAll('line').attr('stroke', CHART.grid).attr('opacity', 0.35);
-    g.append('g').attr('class', 'grid')
-      .call(d3.axisBottom(x).tickSize(iH).tickFormat(() => '').ticks(6) as never)
-      .call((s) => s.select('.domain').remove())
-      .selectAll('line').attr('stroke', CHART.grid).attr('opacity', 0.35);
+      .selectAll('line').data(y.ticks(5)).join('line')
+      .attr('x1', 0).attr('x2', innerW)
+      .attr('y1', (v) => y(v)).attr('y2', (v) => y(v))
+      .attr('stroke', theme.border).attr('stroke-opacity', 0.35);
 
-    const xAx = g.append('g').attr('class', 'axis').attr('transform', `translate(0,${iH})`).call(d3.axisBottom(x).ticks(6));
-    const yAx = g.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6));
-    styleAxis(xAx as never);
-    styleAxis(yAx as never);
-    g.append('text').attr('class', 'axis-label').attr('x', iW / 2).attr('y', iH + 40)
-      .attr('text-anchor', 'middle').attr('fill', CHART.secondary).text(xCfg.label);
-    g.append('text').attr('class', 'axis-label').attr('transform', 'rotate(-90)')
-      .attr('x', -iH / 2).attr('y', -46).attr('text-anchor', 'middle').attr('fill', CHART.secondary).text(yCfg.label);
+    g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(x).ticks(6).tickFormat(xDef.fmt as (v: d3.NumberValue) => string));
+    g.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6).tickFormat(yDef.fmt as (v: d3.NumberValue) => string));
 
-    g.selectAll('.dot').data(pts, (d) => (d as ScatterPoint).id).join('circle')
-      .attr('cx', (d) => x(d.values[state.xAxis]))
-      .attr('cy', (d) => y(d.values[state.yAxis]))
-      .attr('r', (d) => srch && `${d.trackName} ${d.artists}`.toLowerCase().includes(srch) ? 5 : 2.5)
-      .attr('fill', (d) => GENRE_COLOR(d.genre))
-      .attr('opacity', (d) => srch ? (`${d.trackName} ${d.artists}`.toLowerCase().includes(srch) ? 0.95 : 0.06) : 0.45)
-      .on('mouseenter', function (event, d) {
-        d3.select(this).attr('r', 6).attr('opacity', 1);
-        tip.show(event,
-          `<div><strong>${d.trackName}</strong></div>
-           <div class="muted">${d.artists} · ${d.genre}</div>
-           <div>${xCfg.label} : <span class="tooltip-value">${d3.format('.2f')(d.values[state.xAxis])}</span></div>
-           <div>${yCfg.label} : <span class="tooltip-value">${d3.format('.2f')(d.values[state.yAxis])}</span></div>`);
+    g.append('text').attr('class', 'axis-label').attr('x', innerW / 2).attr('y', innerH + 44).attr('text-anchor', 'middle').text(xDef.label);
+    g.append('text').attr('class', 'axis-label').attr('transform', 'rotate(-90)').attr('x', -innerH / 2).attr('y', -46).attr('text-anchor', 'middle').text(yDef.label);
+
+    // Dots
+    g.selectAll<SVGCircleElement, TrackRow>('.dot')
+      .data(data).join('circle').attr('class', 'dot')
+      .attr('cx', (r) => x(Number(r[opts.xAxis as keyof TrackRow])))
+      .attr('cy', (r) => y(Number(r[opts.yAxis as keyof TrackRow])))
+      .attr('r', 3).attr('fill', '#4C78A8').attr('opacity', 0.28)
+      .on('mouseover', function (event, r) {
+        d3.select(this).attr('opacity', 1).attr('r', 5);
+        const xv = Number(r[opts.xAxis as keyof TrackRow]);
+        const yv = Number(r[opts.yAxis as keyof TrackRow]);
+        tip.show(event, `
+          <strong style="font-size:0.9rem">${String(r.track_name || '')}</strong><br>
+          <span style="color:var(--muted);font-size:0.82rem">${String(r.artists || '')}</span>
+          <div style="border-top:1px solid var(--border);margin-top:0.4rem;padding-top:0.4rem;font-size:0.82rem">
+            <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+              <span style="color:var(--muted)">${xDef.label}</span>
+              <span class="tooltip-value">${xDef.fmt(xv)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+              <span style="color:var(--muted)">${yDef.label}</span>
+              <span class="tooltip-value">${yDef.fmt(yv)}</span>
+            </div>
+          </div>`);
       })
       .on('mousemove', (event) => tip.move(event))
-      .on('mouseleave', function (_, d) {
-        const m = srch && `${d.trackName} ${d.artists}`.toLowerCase().includes(srch);
-        d3.select(this).attr('r', m ? 5 : 2.5).attr('opacity', srch ? (m ? 0.95 : 0.06) : 0.45);
-        tip.hide();
-      });
+      .on('mouseout', function () { d3.select(this).attr('opacity', 0.28).attr('r', 3); tip.hide(); });
 
-    if (state.showTrend) {
-      const fit = linReg(pts.map((p) => ({ x: p.values[state.xAxis], y: p.values[state.yAxis] })));
-      if (fit) {
-        g.append('path')
-          .datum(x.domain().map((xv) => ({ xv, yv: fit.intercept + fit.slope * xv })))
-          .attr('fill', 'none').attr('stroke', 'var(--accent)').attr('stroke-width', 2).attr('opacity', 0.85)
-          .attr('d', d3.line<{ xv: number; yv: number }>()
-            .x((d) => x(d.xv)).y((d) => y(d.yv)).defined((d) => Number.isFinite(d.yv)));
-        g.append('text').attr('x', iW - 4).attr('y', 14).attr('text-anchor', 'end')
-          .attr('fill', 'var(--accent)').attr('font-size', 12).attr('font-weight', 700)
-          .text(`r = ${d3.format('+.3f')(fit.r)}`);
-      }
+    // Trend line
+    if (opts.showTrend && data.length > 1) {
+      const pairs = data.map((r) => ({
+        x: Number(r[opts.xAxis as keyof TrackRow]),
+        y: Number(r[opts.yAxis as keyof TrackRow]),
+      })).filter((d) => Number.isFinite(d.x) && Number.isFinite(d.y));
+
+      const mx = d3.mean(pairs, (d) => d.x) ?? 0;
+      const my = d3.mean(pairs, (d) => d.y) ?? 0;
+      let num = 0, den = 0;
+      pairs.forEach(({ x: xv, y: yv }) => { num += (xv - mx) * (yv - my); den += (xv - mx) ** 2; });
+      const slope = den !== 0 ? num / den : 0;
+      const intercept = my - slope * mx;
+
+      const [x0, x1] = xDef.domain;
+      const y0 = slope * x0 + intercept;
+      const y1 = slope * x1 + intercept;
+
+      g.append('line')
+        .attr('x1', x(x0)).attr('y1', y(y0))
+        .attr('x2', x(x1)).attr('y2', y(y1))
+        .attr('stroke', '#E45756').attr('stroke-width', 2)
+        .attr('stroke-dasharray', '6,4').attr('stroke-opacity', 0.7)
+        .attr('pointer-events', 'none');
     }
   }
 
   render();
+
   return {
-    update(s) { state = s; render(); },
-    setLang(l) { _lang = l; render(); },
     resize: render,
     destroy: () => { container.innerHTML = ''; },
+    update: (newOpts) => { opts = { ...opts, ...newOpts }; render(); },
   };
 }

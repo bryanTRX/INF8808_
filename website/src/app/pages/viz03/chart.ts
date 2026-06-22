@@ -4,19 +4,13 @@ import { getChartTheme } from '../../viz-shared/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
 import { GENRE_FAMILIES, assignGenreFamily } from '../../viz-shared/utils/genre-families';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-// Teal for clean, orange-red for explicit — as specified
 const COLOR_CLEAN = '#0d9488';
 const COLOR_EXPLICIT = '#ef4444';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type SortOrder = 'asc' | 'desc' | 'alpha';
 
 export interface Viz03Options {
   sortOrder: SortOrder;
-  lang: 'en' | 'fr';
 }
 
 export interface Viz03Chart {
@@ -28,17 +22,14 @@ export interface Viz03Chart {
 interface FamilyStat {
   key: string;
   en: string;
-  fr: string;
   color: string;
   total: number;
   explicit: number;
   clean: number;
   explicitPct: number;
   cleanPct: number;
-  subgenres: string[]; // top 5 genre tags by track count
+  subgenres: string[];
 }
-
-// ─── Data Processing ──────────────────────────────────────────────────────────
 
 function isExplicit(value: unknown): boolean {
   return String(value).toLowerCase() === 'true';
@@ -64,7 +55,7 @@ function buildFamilyStats(rows: TrackRow[]): FamilyStat[] {
       c.total += 1;
       if (isExplicit(row.explicit)) c.explicit += 1;
       c.genres.set(tag, (c.genres.get(tag) ?? 0) + 1);
-      break; // one track → one family
+      break;
     }
   }
 
@@ -78,7 +69,6 @@ function buildFamilyStats(rows: TrackRow[]): FamilyStat[] {
     return {
       key: fam.key,
       en: fam.en,
-      fr: fam.fr,
       color: fam.color,
       total: c.total,
       explicit: c.explicit,
@@ -90,8 +80,6 @@ function buildFamilyStats(rows: TrackRow[]): FamilyStat[] {
   }).filter((d) => d.total > 0);
 }
 
-// ─── Chart Factory ────────────────────────────────────────────────────────────
-
 export function createViz03Chart(
   container: HTMLElement,
   rows: TrackRow[],
@@ -102,7 +90,6 @@ export function createViz03Chart(
 
   let opts: Viz03Options = {
     sortOrder: 'asc',
-    lang: 'en',
     ...initialOpts,
   };
 
@@ -110,25 +97,21 @@ export function createViz03Chart(
     return [...allStats].sort((a, b) => {
       if (opts.sortOrder === 'asc') return d3.ascending(a.explicitPct, b.explicitPct);
       if (opts.sortOrder === 'desc') return d3.descending(a.explicitPct, b.explicitPct);
-      return d3.ascending(opts.lang === 'fr' ? a.fr : a.en, opts.lang === 'fr' ? b.fr : b.en);
+      return d3.ascending(a.en, b.en);
     });
   }
 
-  function makeTooltip(d: FamilyStat, segment: 'clean' | 'explicit', lang: 'en' | 'fr'): string {
-    const famName = lang === 'fr' ? d.fr : d.en;
-    const segLabel = segment === 'clean'
-      ? (lang === 'fr' ? 'Propre' : 'Clean')
-      : (lang === 'fr' ? 'Explicite' : 'Explicit');
+  function makeTooltip(d: FamilyStat, segment: 'clean' | 'explicit'): string {
+    const segLabel = segment === 'clean' ? 'Clean' : 'Explicit';
     const pct = segment === 'clean' ? d.cleanPct : d.explicitPct;
     const count = segment === 'clean' ? d.clean : d.explicit;
     const segColor = segment === 'clean' ? COLOR_CLEAN : COLOR_EXPLICIT;
-
     const subList = d.subgenres.join(', ');
 
     return `
       <div style="margin-bottom:0.45rem;display:flex;align-items:center;gap:0.5rem">
         <span style="width:10px;height:10px;border-radius:2px;background:${d.color};display:inline-block;flex-shrink:0"></span>
-        <strong style="font-size:0.9rem">${famName}</strong>
+        <strong style="font-size:0.9rem">${d.en}</strong>
       </div>
       <div style="color:var(--muted);font-size:0.77rem;font-style:italic;margin-bottom:0.5rem">${subList}</div>
       <div style="border-top:1px solid var(--border);padding-top:0.45rem;font-size:0.82rem">
@@ -138,15 +121,15 @@ export function createViz03Chart(
           <span class="tooltip-value" style="margin-left:auto">${d3.format('.1f')(pct)}%</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-          <span style="color:var(--muted)">${lang === 'fr' ? 'Titres (segment)' : 'Tracks (segment)'}</span>
+          <span style="color:var(--muted)">Tracks (segment)</span>
           <span class="tooltip-value">${d3.format(',')(count)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-          <span style="color:var(--muted)">${lang === 'fr' ? 'Total famille' : 'Family total'}</span>
+          <span style="color:var(--muted)">Family total</span>
           <span class="tooltip-value">${d3.format(',')(d.total)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-          <span style="color:var(--muted)">${lang === 'fr' ? 'Explicite' : 'Explicit'}</span>
+          <span style="color:var(--muted)">Explicit</span>
           <span class="tooltip-value">${d3.format('.1f')(d.explicitPct)}%</span>
         </div>
       </div>`;
@@ -156,19 +139,16 @@ export function createViz03Chart(
     container.innerHTML = '';
 
     const data = getSorted();
-    const { lang } = opts;
     const theme = getChartTheme();
 
     if (data.length === 0) return;
 
-    // More bottom margin to accommodate 2-line horizontal labels + axis title
     const margin = { top: 56, right: 24, bottom: 110, left: 56 };
     const width  = Math.max(560, container.clientWidth || 900);
     const height = Math.max(460, container.clientHeight || 520);
     const innerW = width  - margin.left - margin.right;
     const innerH = height - margin.top  - margin.bottom;
 
-    // Scales
     const x = d3.scaleBand<string>()
       .domain(data.map((d) => d.key))
       .range([0, innerW])
@@ -194,14 +174,11 @@ export function createViz03Chart(
       .attr('class', 'chart-title')
       .attr('x', innerW / 2).attr('y', -34)
       .attr('text-anchor', 'middle')
-      .text(lang === 'fr'
-        ? 'Proportion de titres explicites vs propres par famille de genres'
-        : 'Explicit vs Clean Track Share by Genre Family');
+      .text('Explicit vs Clean Track Share by Genre Family');
 
-    // Inline legend (top-right, compact)
     const legItems = [
-      { color: COLOR_CLEAN,    label: lang === 'fr' ? 'Propre'    : 'Clean'    },
-      { color: COLOR_EXPLICIT, label: lang === 'fr' ? 'Explicite' : 'Explicit' },
+      { color: COLOR_CLEAN,    label: 'Clean'    },
+      { color: COLOR_EXPLICIT, label: 'Explicit' },
     ];
     const legG = g.append('g').attr('transform', `translate(${innerW - 130}, -28)`);
     legItems.forEach(({ color, label }, i) => {
@@ -212,14 +189,12 @@ export function createViz03Chart(
         .style('font-size', '10.5px').text(label);
     });
 
-    // Grid
     g.append('g').attr('class', 'grid')
       .selectAll('line').data(y.ticks(5)).join('line')
       .attr('x1', 0).attr('x2', innerW)
       .attr('y1', (v) => y(v)).attr('y2', (v) => y(v))
       .attr('stroke', theme.border).attr('stroke-opacity', 0.4);
 
-    // Y axis
     g.append('g').attr('class', 'axis')
       .call(d3.axisLeft(y).ticks(5).tickFormat((v) => `${v}%`));
 
@@ -227,19 +202,15 @@ export function createViz03Chart(
       .attr('transform', 'rotate(-90)')
       .attr('x', -innerH / 2).attr('y', -42)
       .attr('text-anchor', 'middle')
-      .text(lang === 'fr' ? 'Proportion (%)' : 'Share (%)');
+      .text('Share (%)');
 
-    // X axis ticks (no default text — we draw custom 2-line labels below)
     g.append('g').attr('class', 'axis')
       .attr('transform', `translate(0,${innerH})`)
       .call(d3.axisBottom(x).tickSizeOuter(0).tickSizeInner(4).tickFormat(() => ''));
 
-    // Custom 2-line horizontal labels under each bar
     data.forEach((d) => {
       const cx = x(d.key)! + x.bandwidth() / 2;
-      const fullName = lang === 'fr' ? d.fr : d.en;
-      // Split on ' / ' to get two lines; if no '/', just one line
-      const parts = fullName.includes(' / ') ? fullName.split(' / ') : [fullName];
+      const parts = d.en.includes(' / ') ? d.en.split(' / ') : [d.en];
 
       const labelG = g.append('g').attr('transform', `translate(${cx}, ${innerH + 10})`);
       parts.forEach((part, i) => {
@@ -253,17 +224,15 @@ export function createViz03Chart(
       });
     });
 
-    // X axis title — below the labels
     g.append('text').attr('class', 'axis-label')
       .attr('x', innerW / 2)
       .attr('y', innerH + 82)
       .attr('text-anchor', 'middle')
       .style('font-size', '11.5px').style('font-weight', '600')
-      .text(lang === 'fr' ? 'Famille de genres' : 'Genre Family');
+      .text('Genre Family');
 
-    // Stacked bars
     const segmentColors: Record<string, string> = { cleanPct: COLOR_CLEAN, explicitPct: COLOR_EXPLICIT };
-    const segmentKeys:   Record<string, 'clean' | 'explicit'> = { cleanPct: 'clean', explicitPct: 'explicit' };
+    const segmentKeys: Record<string, 'clean' | 'explicit'> = { cleanPct: 'clean', explicitPct: 'explicit' };
 
     stacked.forEach((series) => {
       const segKey   = segmentKeys[series.key]   ?? 'clean';
@@ -280,7 +249,7 @@ export function createViz03Chart(
         .attr('rx', series.key === 'explicitPct' ? 3 : 0)
         .on('mouseover', function (event, d) {
           d3.select(this).attr('opacity', 1);
-          tip.show(event, makeTooltip(d.data, segKey, lang));
+          tip.show(event, makeTooltip(d.data, segKey));
         })
         .on('mousemove', (event) => tip.move(event))
         .on('mouseout', function () { d3.select(this).attr('opacity', 0.88); tip.hide(); });

@@ -1,11 +1,10 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
 import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { BeeGrouping, createViz12Chart, Viz12Chart } from './chart';
-import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
 @Component({
@@ -20,23 +19,18 @@ export class Viz12Component implements AfterViewInit, OnDestroy {
   groupBy: BeeGrouping = 'none';
   sampleSize = 3000;
   search = '';
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
-  readonly langService = inject(LangService);
   private dataService = inject(VizDataService);
   private controller?: Viz12Chart;
   private cleanupResize?: () => void;
   private tip = createTooltip();
 
-  constructor() {
-    effect(() => { const l = this.langService.lang(); this.controller?.setLang(l); });
-  }
-
   ngAfterViewInit() {
     this.dataService.loadDataset().subscribe({
       next: (rows) => {
         deferChartInit(() => {
-          this.controller = createViz12Chart(this.chartRef.nativeElement, rows, this.tip, this.langService.lang());
+          this.controller = createViz12Chart(this.chartRef.nativeElement, rows, this.tip);
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.refresh());
           this.refresh();
           this.loadState.setLoaded(rows.length);

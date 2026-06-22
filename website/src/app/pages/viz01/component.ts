@@ -4,7 +4,6 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
-  effect,
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -14,13 +13,11 @@ import { observeResize } from '../../viz-shared/utils/resize';
 import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
 import { ALL_DIMS, DEFAULT_DIM_KEYS, createViz01Chart, Viz01Chart } from './chart';
-import { LangService } from '../../core/services/lang.service';
 import { VizLoadState } from '../../core/i18n/viz-load-state';
 
 export interface DimControl {
   key: string;
-  en: string;
-  fr: string;
+  label: string;
   checked: boolean;
 }
 
@@ -33,13 +30,11 @@ export interface DimControl {
 export class Viz01Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
 
-  readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
   dimControls: DimControl[] = ALL_DIMS.map((d) => ({
     key: d.key,
-    en: d.en,
-    fr: d.fr,
+    label: d.en,
     checked: DEFAULT_DIM_KEYS.includes(d.key),
   }));
 
@@ -48,17 +43,6 @@ export class Viz01Component implements AfterViewInit, OnDestroy {
   private cleanupResize?: () => void;
   private cleanupTheme?: () => void;
   private tip = createTooltip();
-
-  constructor() {
-    effect(() => {
-      const lang = this.langService.lang() as 'en' | 'fr';
-      this.controller?.update({ lang });
-    });
-  }
-
-  get lang(): 'en' | 'fr' {
-    return this.langService.lang() as 'en' | 'fr';
-  }
 
   get selectedDimKeys(): string[] {
     return this.dimControls.filter((d) => d.checked).map((d) => d.key);
@@ -70,7 +54,7 @@ export class Viz01Component implements AfterViewInit, OnDestroy {
 
   onDimChange() {
     if (this.selectedDimKeys.length < 2) return;
-    this.controller?.update({ dimKeys: this.selectedDimKeys, lang: this.lang });
+    this.controller?.update({ dimKeys: this.selectedDimKeys });
   }
 
   ngAfterViewInit() {
@@ -81,7 +65,7 @@ export class Viz01Component implements AfterViewInit, OnDestroy {
             this.chartRef.nativeElement,
             rows,
             this.tip,
-            { dimKeys: this.selectedDimKeys, lang: this.lang },
+            { dimKeys: this.selectedDimKeys },
           );
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () =>
             this.controller?.resize(),

@@ -1,229 +1,242 @@
-import type { Lang } from '../../core/services/lang.service';
 import * as d3 from 'd3';
 import { TrackRow } from '../../core/models/track-row';
-import { CHART, styleAxis } from '../../viz-shared/utils/chart-theme';
+import { getChartTheme } from '../../viz-shared/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
+import { GENRE_FAMILIES, assignGenreFamily } from '../../viz-shared/utils/genre-families';
 
-const GENRE_COLORS: Record<string, string> = {
-  pop: '#2f80ed', rock: '#d1495b', 'hip-hop': '#1b998b', electronic: '#8f63c7',
-  dance: '#f2a541', indie: '#537a5a', 'r&b': '#ef476f', country: '#7f5539',
-  jazz: '#118ab2', classical: '#6c757d', latin: '#e76f51', metal: '#343a40',
-  other: '#888888',
+// ─── Labels ───────────────────────────────────────────────────────────────────
+
+const LBL = {
+  title: 'Popularity Beeswarm',
+  subtitle: 'Each dot = one track. X = popularity score (0–100).',
+  xLabel: 'Popularity',
+  groupLabels: {
+    none: 'All tracks',
+    explicit: 'Explicit',
+    genre: 'Genre Family',
+  } as Record<BeeGrouping, string>,
+  tipArtist: 'Artist',
+  tipGenre: 'Genre',
+  tipPop: 'Popularity',
+  tipExplicit: 'Explicit',
+  yes: 'Yes',
+  no: 'No',
 };
 
-function classifyGenre(raw: unknown): string {
-  const tokens = String(raw || '').toLowerCase().split(';').map((t) => t.trim());
-  if (tokens.some((t) => t.includes('hip-hop') || t.includes('hip hop'))) return 'hip-hop';
-  if (tokens.some((t) => t === 'r-n-b' || t === 'r&b' || t.includes('soul'))) return 'r&b';
-  for (const g of Object.keys(GENRE_COLORS).filter((k) => k !== 'other')) {
-    if (tokens.some((t) => t.includes(g))) return g;
-  }
-  return 'other';
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface BeePoint {
-  trackId: string;
-  trackName: string;
-  artists: string;
-  popularity: number;
-  genre: string;
-  y: number;
-}
+export type BeeGrouping = 'none' | 'explicit' | 'genre';
 
-export type BeeGrouping = 'none' | 'genre';
-
-export interface Viz12State {
+export interface Viz12Options {
   groupBy: BeeGrouping;
   sampleSize: number;
   search: string;
 }
 
-const L = (lang: Lang) => lang === 'fr' ? {
-  titleAll: (n: number) => `Distribution de la popularité sur ${n} titres`,
-  hintAll: 'Chaque point représente un titre. Sa position indique son score de popularité Spotify, de 0 à 100.',
-  titleGenre: (n: number) => `Popularité par genre sur ${n} titres`,
-  hintGenre: 'Une rangée par genre. La position horizontale indique la popularité.',
-  axisX: 'Popularité Spotify (de 0 à 100)',
-  tip: { genre: 'Genre', pop: 'Popularité' },
-} : {
-  titleAll: (n: number) => `Popularity Distribution across ${n} tracks`,
-  hintAll: 'Each dot represents one track. Its horizontal position shows the Spotify popularity score from 0 to 100.',
-  titleGenre: (n: number) => `Popularity by Genre across ${n} tracks`,
-  hintGenre: 'One row per genre. The horizontal position shows popularity.',
-  axisX: 'Spotify Popularity (0 to 100)',
-  tip: { genre: 'Genre', pop: 'Popularity' },
-};
-
 export interface Viz12Chart {
-  update: (s: Viz12State) => void;
-  setLang: (l: Lang) => void;
   resize: () => void;
   destroy: () => void;
+  update: (opts: Partial<Viz12Options>) => void;
 }
 
-function dodge(points: BeePoint[], radius: number, x: (p: BeePoint) => number): void {
-  const sorted = points.slice().sort((a, b) => a.popularity - b.popularity);
-  const placed: { cx: number; cy: number }[] = [];
-  const r2 = radius * 2;
+// ─── Beeswarm Layout ──────────────────────────────────────────────────────────
 
-  sorted.forEach((p) => {
-    const cx = x(p);
-    let cy = 0;
-    let row = 0;
-    while (true) {
-      const cy1 = row === 0 ? 0 : (row % 2 === 0 ? 1 : -1) * Math.ceil(row / 2) * r2;
-      const ok = placed.every(({ cx: ox, cy: oy }) => {
-        const dx = cx - ox, dy = cy1 - oy;
-        return dx * dx + dy * dy >= r2 * r2;
-      });
-      if (ok) { cy = cy1; break; }
-      row++;
-      if (row > 200) break;
+interface BeePoint {
+  x: number;
+  y: number;
+  pop: number;
+  title: string;
+  artist: string;
+  genre: string;
+  explicit: boolean;
+  group: string;
+  color: string;
+  highlight: boolean;
+}
+
+function beeswarm(
+  data: { pop: number; [k: string]: unknown }[],
+  xScale: d3.ScaleLinear<number, number>,
+  R: number,
+  bandwidth: number,
+): BeePoint[] {
+  const sorted = [...data].sort((a, b) => d3.ascending(a.pop, b.pop));
+  const placed: { cx: number; cy: number; r: number }[] = [];
+  return sorted.map((d) => {
+    const cx = xScale(d.pop);
+    let cy = bandwidth / 2;
+    let placed2 = false;
+    for (let step = 0; step <= bandwidth; step += R * 0.9) {
+      for (const sign of [1, -1]) {
+        const tryY = bandwidth / 2 + sign * step;
+        let ok = true;
+        for (const p of placed) {
+          const dx = cx - p.cx, dy = tryY - p.cy;
+          if (Math.sqrt(dx * dx + dy * dy) < R * 1.8) { ok = false; break; }
+        }
+        if (ok) {
+          placed.push({ cx, cy: tryY, r: R });
+          cy = tryY;
+          placed2 = true;
+          break;
+        }
+      }
+      if (placed2) break;
     }
-    p.y = cy;
-    placed.push({ cx, cy });
+    if (!placed2) placed.push({ cx, cy, r: R });
+    return { ...d, x: cx, y: cy } as BeePoint;
   });
 }
 
-export function createViz12Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz12Chart {
-  let _lang = initLang;
-  const allPoints: BeePoint[] = rows
-    .map((r): BeePoint | null => {
-      const popularity = Number(r.popularity);
-      if (!Number.isFinite(popularity)) return null;
-      return {
-        trackId: String(r.track_id || ''),
-        trackName: String(r.track_name || ''),
-        artists: String(r.artists || ''),
-        popularity,
-        genre: classifyGenre(r.track_genre),
-        y: 0,
-      };
-    })
-    .filter((d): d is BeePoint => d !== null);
+// ─── Chart Factory ────────────────────────────────────────────────────────────
 
-  let state: Viz12State = { groupBy: 'none', sampleSize: 3000, search: '' };
+export function createViz12Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip): Viz12Chart {
+  let opts: Viz12Options = { groupBy: 'none', sampleSize: 3000, search: '' };
 
-  function sample<T>(arr: T[], n: number): T[] {
-    if (arr.length <= n) return arr;
-    const step = arr.length / n;
-    return d3.range(n).map((i) => arr[Math.floor(i * step)]);
+  const prepped: Array<{
+    pop: number; title: string; artist: string; genre: string;
+    explicit: boolean; famKey: string; famColor: string;
+  }> = rows.map((r) => {
+    const genre = String(r.track_genre || '').trim();
+    const fam = assignGenreFamily(genre.split(';')[0].trim());
+    return {
+      pop: Number(r.popularity) || 0,
+      title: String(r.track_name || ''),
+      artist: String(r.artists || ''),
+      genre,
+      explicit: String(r.explicit).toLowerCase() === 'true',
+      famKey: fam?.key ?? 'other',
+      famColor: fam?.color ?? '#888',
+    };
+  }).filter((d) => d.pop >= 0);
+
+  function getGroups(): Array<{ key: string; label: string; tracks: typeof prepped; color: string }> {
+    const sample = (arr: typeof prepped) => {
+      if (arr.length <= opts.sampleSize) return arr;
+      const step = arr.length / opts.sampleSize;
+      return Array.from({ length: opts.sampleSize }, (_, i) => arr[Math.floor(i * step)]);
+    };
+
+    const searchFilter = opts.search
+      ? (d: (typeof prepped)[0]) =>
+          d.title.toLowerCase().includes(opts.search.toLowerCase()) ||
+          d.artist.toLowerCase().includes(opts.search.toLowerCase())
+      : () => true;
+
+    if (opts.groupBy === 'none') {
+      return [{ key: 'all', label: LBL.groupLabels.none, tracks: sample(prepped.filter(searchFilter)), color: '#4C78A8' }];
+    }
+    if (opts.groupBy === 'explicit') {
+      const exp = prepped.filter((d) => d.explicit).filter(searchFilter);
+      const clean = prepped.filter((d) => !d.explicit).filter(searchFilter);
+      return [
+        { key: 'explicit', label: LBL.groupLabels.explicit, tracks: sample(exp), color: '#E45756' },
+        { key: 'clean', label: 'Clean', tracks: sample(clean), color: '#4C78A8' },
+      ];
+    }
+    // genre
+    return GENRE_FAMILIES.map((fam) => {
+      const tracks = prepped.filter((d) => d.famKey === fam.key).filter(searchFilter);
+      return { key: fam.key, label: fam.en, tracks: sample(tracks), color: fam.color };
+    }).filter((g) => g.tracks.length > 0);
   }
 
   function render() {
     container.innerHTML = '';
-    const lbl  = L(_lang);
-    const srch   = state.search.toLowerCase();
-    const pts    = sample(allPoints, state.sampleSize);
-    const radius = 2.8;
+    const theme = getChartTheme();
+    const groups = getGroups();
+    if (groups.length === 0) return;
 
-    if (state.groupBy === 'none') {
-      const width  = Math.max(640, container.clientWidth || 900);
-      const margin = { top: 64, right: 40, bottom: 52, left: 40 };
-      const iW     = width - margin.left - margin.right;
+    const R = 3;
+    const groupH = opts.groupBy === 'none' ? 80 : 55;
+    const margin = { top: 54, right: 24, bottom: 60, left: 80 };
+    const width  = Math.max(560, container.clientWidth || 900);
+    const innerW = width - margin.left - margin.right;
+    const totalH = margin.top + groups.length * (groupH + 24) + margin.bottom + 30;
 
-      const x = d3.scaleLinear().domain([0, 100]).range([0, iW]);
-      dodge(pts, radius, (p) => x(p.popularity));
-      const yExt = d3.extent(pts, (p) => p.y) as [number, number];
-      const bandH = Math.abs(yExt[0]) + Math.abs(yExt[1]) + radius * 6;
-      const height = margin.top + bandH + margin.bottom;
+    const x = d3.scaleLinear().domain([0, 100]).range([0, innerW]);
 
-      const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
-      const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top + Math.abs(yExt[0]) + radius * 3})`);
+    const svg = d3.select(container).append('svg')
+      .attr('width', width).attr('height', totalH)
+      .attr('viewBox', `0 0 ${width} ${totalH}`);
 
-      svg.append('text').attr('x', margin.left).attr('y', 22).attr('fill', CHART.text).attr('font-size', 15).attr('font-weight', 700).text(lbl.titleAll(pts.length));
-      svg.append('text').attr('x', margin.left).attr('y', 40).attr('fill', CHART.muted).attr('font-size', 11).text(lbl.hintAll);
+    svg.append('text').attr('class', 'chart-title')
+      .attr('x', width / 2).attr('y', 22).attr('text-anchor', 'middle')
+      .text(LBL.title);
+    svg.append('text').attr('class', 'chart-subtitle')
+      .attr('x', width / 2).attr('y', 38).attr('text-anchor', 'middle')
+      .text(LBL.subtitle);
 
-      const xAx = g.append('g').attr('class', 'axis').attr('transform', `translate(0,${bandH / 2})`).call(d3.axisBottom(x).ticks(10));
-      styleAxis(xAx as never);
-      g.append('text').attr('class', 'axis-label').attr('x', iW / 2).attr('y', bandH / 2 + 36).attr('text-anchor', 'middle').attr('fill', CHART.secondary).text(lbl.axisX);
+    groups.forEach((group, gi) => {
+      const offsetY = margin.top + gi * (groupH + 24);
 
-      g.selectAll('.bee').data(pts, (d) => (d as BeePoint).trackId).join('circle')
-        .attr('cx', (d) => x(d.popularity)).attr('cy', (d) => d.y)
-        .attr('r', (d) => srch && `${d.trackName} ${d.artists}`.toLowerCase().includes(srch) ? 4.5 : radius)
-        .attr('fill', (d) => GENRE_COLORS[d.genre] || GENRE_COLORS['other'])
-        .attr('opacity', (d) => srch ? (`${d.trackName} ${d.artists}`.toLowerCase().includes(srch) ? 0.95 : 0.06) : 0.52)
-        .on('mouseenter', function (event, d) {
-          d3.select(this).attr('r', 5.5).attr('opacity', 1);
-          tip.show(event,
-            `<div><strong>${d.trackName}</strong></div>
-             <div class="muted">${d.artists}</div>
-             <div>${lbl.tip.genre} : ${d.genre}</div>
-             <div>${lbl.tip.pop} : <span class="tooltip-value">${d.popularity}</span>/100</div>`);
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${offsetY})`);
+
+      g.append('text').attr('class', 'axis-label')
+        .attr('x', -8).attr('y', groupH / 2 + 4)
+        .attr('text-anchor', 'end')
+        .style('font-size', '11px').style('font-weight', '600')
+        .style('fill', group.color)
+        .text(group.label);
+
+      const beeData = group.tracks.map((t) => ({
+        pop: t.pop,
+        title: t.title,
+        artist: t.artist,
+        genre: t.genre,
+        explicit: t.explicit,
+        group: group.key,
+        color: opts.groupBy === 'genre' ? t.famColor : group.color,
+        highlight: false,
+      }));
+
+      const swarm = beeswarm(beeData, x, R, groupH);
+
+      g.selectAll<SVGCircleElement, BeePoint>('.bee')
+        .data(swarm).join('circle').attr('class', 'bee')
+        .attr('cx', (d) => d.x).attr('cy', (d) => d.y)
+        .attr('r', R).attr('fill', (d) => d.color).attr('opacity', 0.65)
+        .on('mouseover', function (event, d) {
+          d3.select(this).attr('opacity', 1).attr('r', R + 2);
+          tip.show(event, `
+            <strong style="font-size:0.9rem">${d.title}</strong>
+            <div style="border-top:1px solid var(--border);margin-top:0.4rem;padding-top:0.4rem;font-size:0.82rem">
+              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+                <span style="color:var(--muted)">${LBL.tipArtist}</span>
+                <span class="tooltip-value">${d.artist}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+                <span style="color:var(--muted)">${LBL.tipPop}</span>
+                <span class="tooltip-value">${d.pop}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+                <span style="color:var(--muted)">${LBL.tipExplicit}</span>
+                <span class="tooltip-value">${d.explicit ? LBL.yes : LBL.no}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
+                <span style="color:var(--muted)">${LBL.tipGenre}</span>
+                <span class="tooltip-value">${d.genre.split(';')[0]}</span>
+              </div>
+            </div>`);
         })
         .on('mousemove', (event) => tip.move(event))
-        .on('mouseleave', function (_, d) {
-          const isMatch = srch && `${d.trackName} ${d.artists}`.toLowerCase().includes(srch);
-          d3.select(this).attr('r', isMatch ? 4.5 : radius).attr('opacity', srch ? (isMatch ? 0.95 : 0.06) : 0.52);
-          tip.hide();
-        });
+        .on('mouseout', function () { d3.select(this).attr('opacity', 0.65).attr('r', R); tip.hide(); });
 
-      const legendG = svg.append('g').attr('transform', `translate(${margin.left}, ${height - margin.bottom + 18})`);
-      Object.entries(GENRE_COLORS).filter(([k]) => k !== 'other').forEach(([genre, color], i) => {
-        const col = legendG.append('g').attr('transform', `translate(${i * 76}, 0)`);
-        col.append('circle').attr('cx', 5).attr('cy', 5).attr('r', 4).attr('fill', color);
-        col.append('text').attr('x', 13).attr('y', 9).attr('font-size', 9).attr('fill', CHART.muted).text(genre);
-      });
-
-    } else {
-      const genres  = Object.keys(GENRE_COLORS).filter((k) => k !== 'other');
-      const grouped = d3.group(pts, (d) => d.genre);
-      const rowH    = 64;
-      const width   = Math.max(640, container.clientWidth || 900);
-      const margin  = { top: 64, right: 40, bottom: 24, left: 96 };
-      const iW      = width - margin.left - margin.right;
-      const height  = margin.top + genres.length * rowH + margin.bottom;
-
-      const x = d3.scaleLinear().domain([0, 100]).range([0, iW]);
-      const svg = d3.select(container).append('svg').attr('width', width).attr('height', height).attr('viewBox', `0 0 ${width} ${height}`);
-
-      svg.append('text').attr('x', margin.left).attr('y', 22).attr('fill', CHART.text).attr('font-size', 15).attr('font-weight', 700).text(lbl.titleGenre(pts.length));
-      svg.append('text').attr('x', margin.left).attr('y', 40).attr('fill', CHART.muted).attr('font-size', 11).text(lbl.hintGenre);
-
-      genres.forEach((genre, gi) => {
-        const gPts = grouped.get(genre) || [];
-        const midY = margin.top + gi * rowH + rowH / 2;
-        const color = GENRE_COLORS[genre];
-
-        svg.append('text')
-          .attr('x', margin.left - 8).attr('y', midY + 4)
-          .attr('text-anchor', 'end').attr('fill', color)
-          .attr('font-size', 11).attr('font-weight', 600)
-          .text(genre);
-
-        svg.append('line')
-          .attr('x1', margin.left).attr('x2', margin.left + iW)
-          .attr('y1', midY).attr('y2', midY)
-          .attr('stroke', CHART.axis).attr('opacity', 0.4);
-
-        dodge(gPts, 2.5, (p) => x(p.popularity));
-        svg.selectAll(`.bee-${gi}`).data(gPts).join('circle')
-          .attr('cx', (d) => margin.left + x(d.popularity))
-          .attr('cy', (d) => midY + d.y)
-          .attr('r', 2.5).attr('fill', color).attr('opacity', 0.55)
-          .on('mouseenter', function (event, d) {
-            d3.select(this).attr('r', 4.5).attr('opacity', 1);
-            tip.show(event,
-              `<div><strong>${d.trackName}</strong></div>
-               <div class="muted">${d.artists}</div>
-               <div>${lbl.tip.pop} : <span class="tooltip-value">${d.popularity}</span>/100</div>`);
-          })
-          .on('mousemove', (event) => tip.move(event))
-          .on('mouseleave', function () { d3.select(this).attr('r', 2.5).attr('opacity', 0.55); tip.hide(); });
-      });
-
-      const xAx = svg.append('g').attr('class', 'axis')
-        .attr('transform', `translate(${margin.left},${height - margin.bottom})`)
-        .call(d3.axisBottom(x).ticks(10));
-      styleAxis(xAx as never);
-    }
+      if (gi === groups.length - 1) {
+        g.append('g').attr('class', 'axis').attr('transform', `translate(0,${groupH + 8})`)
+          .call(d3.axisBottom(x).ticks(8));
+        g.append('text').attr('class', 'axis-label')
+          .attr('x', innerW / 2).attr('y', groupH + 44)
+          .attr('text-anchor', 'middle').text(LBL.xLabel);
+      }
+    });
   }
 
   render();
+
   return {
-    update(s) { state = s; render(); },
-    setLang(l) { _lang = l; render(); },
     resize: render,
     destroy: () => { container.innerHTML = ''; },
+    update: (newOpts) => { opts = { ...opts, ...newOpts }; render(); },
   };
 }

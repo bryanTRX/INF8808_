@@ -20,7 +20,7 @@ export class Viz10Component implements AfterViewInit, OnDestroy {
 
   performers: Performer[] = [];
   readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang(), 'artists');
+  readonly loadState = new VizLoadState('artists');
 
   private dataService = inject(VizDataService);
   private controller?: Viz10Chart;

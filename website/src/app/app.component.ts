@@ -5,15 +5,13 @@ import {
   NgZone,
   OnDestroy,
   ViewChild,
-  computed,
   inject,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { appStrings } from './core/i18n/app-strings';
-import { LangService } from './core/services/lang.service';
 import { ThemeService } from './core/services/theme.service';
-import { getVizCatalog } from './viz-shared/viz-catalog';
+import { VIZ_CATALOG } from './viz-shared/viz-catalog';
 
 @Component({
   selector: 'app-root',
@@ -24,11 +22,10 @@ import { getVizCatalog } from './viz-shared/viz-catalog';
 export class AppComponent implements AfterViewInit, OnDestroy {
   @ViewChild('mainScroll') mainScroll?: ElementRef<HTMLElement>;
 
-  private readonly langService = inject(LangService);
   private themeService = inject(ThemeService);
-  readonly catalog = computed(() => getVizCatalog(this.langService.lang()));
-  readonly strings = computed(() => appStrings(this.langService.lang()));
-  readonly sectionAnchors = computed(() => ['dashboard', ...this.catalog().map((viz) => viz.anchor)]);
+  readonly catalog = VIZ_CATALOG;
+  readonly strings = appStrings('en');
+  readonly sectionAnchors = ['dashboard', ...VIZ_CATALOG.map((viz) => viz.anchor)];
 
   activeAnchor = 'dashboard';
   private router = inject(Router);
@@ -80,7 +77,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       const container = this.mainScroll?.nativeElement;
       if (!container) return;
 
-      const targets = this.sectionAnchors()
+      const targets = this.sectionAnchors
         .map((id) => container.querySelector<HTMLElement>(`#${id}`))
         .filter((el): el is HTMLElement => !!el);
 
@@ -155,9 +152,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     if (!container) return;
 
     const marker = container.getBoundingClientRect().top + 80;
-    let current = this.sectionAnchors()[0];
+    let current = this.sectionAnchors[0];
 
-    for (const id of this.sectionAnchors()) {
+    for (const id of this.sectionAnchors) {
       const el = container.querySelector<HTMLElement>(`#${id}`);
       if (!el) continue;
       if (el.getBoundingClientRect().top <= marker) current = id;

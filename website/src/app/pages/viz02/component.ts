@@ -26,7 +26,7 @@ export class Viz02Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
 
   readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
   sortOrder: SortOrder = 'desc';
 

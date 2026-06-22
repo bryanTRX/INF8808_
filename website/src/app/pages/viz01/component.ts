@@ -32,7 +32,7 @@ export class Viz01Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
 
   readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
   dimControls: DimControl[] = ALL_DIMS.map((d) => ({
     key: d.key,

@@ -28,7 +28,7 @@ export class Viz05Component implements AfterViewInit, OnDestroy {
   selectedGenres = new Set(['pop', 'rock', 'hip-hop', 'electronic', 'jazz', 'classical']);
   sampleSize = 250;
   sharedScales = true;
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
   readonly langService = inject(LangService);
   private dataService = inject(VizDataService);

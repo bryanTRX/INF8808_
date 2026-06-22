@@ -2,10 +2,10 @@
   <p class="status">{{ loadState.status() }}</p>
   <div class="controls">
     <button type="button" [class.active]="mode === 'energy-loudness'" (click)="setMode('energy-loudness')">
-      {{ modeLabels()['energy-loudness'] }}
+      {{ modeLabels['energy-loudness'] }}
     </button>
     <button type="button" [class.active]="mode === 'speech-dance'" (click)="setMode('speech-dance')">
-      {{ modeLabels()['speech-dance'] }}
+      {{ modeLabels['speech-dance'] }}
     </button>
   </div>
   <div #chart class="chart-container" style="min-height:560px">

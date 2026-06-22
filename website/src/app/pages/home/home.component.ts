@@ -1,7 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { appStrings } from '../../core/i18n/app-strings';
-import { LangService } from '../../core/services/lang.service';
-import { getStoryPrologue, getVizCatalog } from '../../viz-shared/viz-catalog';
+import { STORY_PROLOGUE, VIZ_CATALOG } from '../../viz-shared/viz-catalog';
 import { VizChapterComponent } from '../../viz-shared/viz-chapter/viz-chapter.component';
 import { Viz01Component } from '../viz01/component';
 import { Viz02Component } from '../viz02/component';
@@ -31,56 +30,56 @@ import { Viz10Component } from '../viz10/component';
   ],
   template: `
     <section id="dashboard" class="story-prologue">
-      <p class="prologue-eyebrow">{{ prologue().eyebrow }}</p>
-      <h1>{{ prologue().title }}</h1>
-      <p class="prologue-lead">{{ prologue().lead }}</p>
-      <p class="prologue-bridge">{{ prologue().bridge }}</p>
+      <p class="prologue-eyebrow">{{ prologue.eyebrow }}</p>
+      <h1>{{ prologue.title }}</h1>
+      <p class="prologue-lead">{{ prologue.lead }}</p>
+      <p class="prologue-bridge">{{ prologue.bridge }}</p>
     </section>
 
     <div id="viz-1" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[0]" />
+      <app-viz-chapter [entry]="catalog[0]" />
       <app-viz01 />
     </div>
     <div id="viz-2" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[1]" />
+      <app-viz-chapter [entry]="catalog[1]" />
       <app-viz02 />
     </div>
     <div id="viz-3" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[2]" />
+      <app-viz-chapter [entry]="catalog[2]" />
       <app-viz03 />
     </div>
     <div id="viz-5" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[3]" />
+      <app-viz-chapter [entry]="catalog[3]" />
       <app-viz05 />
     </div>
     <div id="viz-4" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[4]" />
+      <app-viz-chapter [entry]="catalog[4]" />
       <app-viz04/>
     </div>
     <div id="viz-6" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[5]" />
+      <app-viz-chapter [entry]="catalog[5]" />
       <app-viz06 />
     </div>
     <div id="viz-7" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[6]" />
+      <app-viz-chapter [entry]="catalog[6]" />
       <app-viz07 />
     </div>
     <div id="viz-8" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[7]" />
+      <app-viz-chapter [entry]="catalog[7]" />
       <app-viz08 />
     </div>
     <div id="viz-9" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[8]" />
+      <app-viz-chapter [entry]="catalog[8]" />
       <app-viz09 />
     </div>
     <div id="viz-10" class="viz-scroll-target">
-      <app-viz-chapter [entry]="catalog()[9]" />
+      <app-viz-chapter [entry]="catalog[9]" />
       <app-viz10 />
     </div>
     <footer class="story-epilogue">
-      <p class="epilogue-eyebrow">{{ strings().epilogueEyebrow }}</p>
-      <h2>{{ strings().epilogueTitle }}</h2>
-      <p>{{ strings().epilogueBody }}</p>
+      <p class="epilogue-eyebrow">{{ strings.epilogueEyebrow }}</p>
+      <h2>{{ strings.epilogueTitle }}</h2>
+      <p>{{ strings.epilogueBody }}</p>
     </footer>
   `,
   styles: [`
@@ -140,8 +139,7 @@ import { Viz10Component } from '../viz10/component';
   `],
 })
 export class HomeComponent {
-  private readonly langService = inject(LangService);
-  readonly catalog = computed(() => getVizCatalog(this.langService.lang()));
-  readonly prologue = computed(() => getStoryPrologue(this.langService.lang()));
-  readonly strings = computed(() => appStrings(this.langService.lang()));
+  readonly catalog = VIZ_CATALOG;
+  readonly prologue = STORY_PROLOGUE;
+  readonly strings = appStrings('en');
 }

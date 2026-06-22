@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -18,10 +18,10 @@ import { createViz08Chart, FEATURE_KEYS, FeatureKey, Viz08Chart, getFeatureLabel
 export class Viz08Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
   readonly featureKeys = FEATURE_KEYS;
-  readonly featureLabels = computed(() => getFeatureLabels(this.langService.lang()));
+  readonly featureLabels = getFeatureLabels('en');
   feature: FeatureKey = 'valence';
   readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
   private dataService = inject(VizDataService);
   private controller?: Viz08Chart;

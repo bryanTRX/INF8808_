@@ -19,7 +19,7 @@ export class Viz04Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
   method: CorrelationMethod = 'pearson';
   readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
   private dataService = inject(VizDataService);
   private controller?: Viz04Chart;

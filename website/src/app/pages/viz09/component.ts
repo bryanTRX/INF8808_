@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -19,8 +19,8 @@ export class Viz09Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
   mode: HeatmapMode = 'energy-loudness';
   readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang());
-  readonly modeLabels = computed(() => getModeLabels(this.langService.lang()));
+  readonly loadState = new VizLoadState();
+  readonly modeLabels = getModeLabels('en');
 
   private dataService = inject(VizDataService);
   private controller?: Viz09Chart;

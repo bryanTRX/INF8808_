@@ -17,7 +17,7 @@ import { createViz07Chart, Viz07Chart } from './chart';
 export class Viz07Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
   readonly langService = inject(LangService);
-  readonly loadState = new VizLoadState(() => this.langService.lang(), 'ready');
+  readonly loadState = new VizLoadState('ready');
 
   stats: { label: string; value: string; hint: string }[] = [];
 

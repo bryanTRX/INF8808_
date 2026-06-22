@@ -1,30 +1,27 @@
 import { computed, signal } from '@angular/core';
-import type { Lang } from '../services/lang.service';
 import { vizStrings } from './viz-status';
 
 type LoadKind = 'tracks' | 'ready' | 'artists';
+
+const S = vizStrings('en');
 
 export class VizLoadState {
   private readonly isLoading = signal(true);
   private readonly hasError = signal(false);
   private readonly count = signal(0);
 
-  constructor(
-    private getLang: () => Lang,
-    private kind: LoadKind = 'tracks',
-  ) {}
+  constructor(private kind: LoadKind = 'tracks') {}
 
   readonly status = computed(() => {
-    const s = vizStrings(this.getLang());
-    if (this.hasError()) return s.loadError;
-    if (this.isLoading()) return s.loading;
+    if (this.hasError()) return S.loadError;
+    if (this.isLoading()) return S.loading;
     const n = this.count();
-    if (this.kind === 'ready') return s.loadedReady(n);
-    if (this.kind === 'artists') return s.loadedArtists(n);
-    return s.loadedTracks(n);
+    if (this.kind === 'ready') return S.loadedReady(n);
+    if (this.kind === 'artists') return S.loadedArtists(n);
+    return S.loadedTracks(n);
   });
 
-  readonly chartLoadingLabel = computed(() => vizStrings(this.getLang()).chartLoading);
+  readonly chartLoadingLabel = computed(() => S.chartLoading);
 
   setLoading(): void {
     this.isLoading.set(true);

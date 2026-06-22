@@ -16,7 +16,7 @@ import { VizLoadState } from '../../core/i18n/viz-load-state';
 })
 export class Viz06Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
-  readonly loadState = new VizLoadState(() => this.langService.lang());
+  readonly loadState = new VizLoadState();
 
   readonly langService = inject(LangService);
   private dataService = inject(VizDataService);

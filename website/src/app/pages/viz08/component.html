@@ -3,7 +3,7 @@
   <div class="controls">
     @for (f of featureKeys; track f) {
       <button type="button" [class.active]="feature === f" (click)="feature = f; onFeatureChange()">
-        {{ featureLabels()[f] }}
+        {{ featureLabels[f] }}
       </button>
     }
   </div>

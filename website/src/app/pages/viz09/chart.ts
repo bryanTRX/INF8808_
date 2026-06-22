@@ -78,7 +78,7 @@ export interface Viz09Chart {
   destroy: () => void;
 }
 
-export function createViz09Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz09Chart {
+export function createViz09Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'en'): Viz09Chart {
   let mode: HeatmapMode = 'energy-loudness';
   let _lang: Lang = initLang;
 

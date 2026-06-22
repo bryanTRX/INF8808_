@@ -78,7 +78,7 @@ function dodge(points: BeePoint[], radius: number, x: (p: BeePoint) => number): 
   });
 }
 
-export function createViz12Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz12Chart {
+export function createViz12Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'en'): Viz12Chart {
   let _lang = initLang;
   const allPoints: BeePoint[] = rows
     .map((r): BeePoint | null => {

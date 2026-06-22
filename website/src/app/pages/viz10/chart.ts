@@ -124,7 +124,7 @@ export function createViz10Chart(
   rows: TrackRow[],
   performers: Performer[],
   tip: VizTooltip,
-  lang: Lang = 'fr',
+  lang: Lang = 'en',
 ): Viz10Chart {
   let _lang = lang;
   const strings = () => L(_lang);

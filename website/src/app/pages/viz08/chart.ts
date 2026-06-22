@@ -103,7 +103,7 @@ export interface Viz08Chart {
   destroy: () => void;
 }
 
-export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz08Chart {
+export function createViz08Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'en'): Viz08Chart {
   const filtered = filterTopGenres(rows, 50);
   let feature: FeatureKey = 'valence';
   let _lang: Lang = initLang;

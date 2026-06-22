@@ -16,7 +16,7 @@ export type SortOrder = 'asc' | 'desc' | 'alpha';
 
 export interface Viz03Options {
   sortOrder: SortOrder;
-  lang: 'en' | 'fr';
+  lang: 'en';
 }
 
 export interface Viz03Chart {

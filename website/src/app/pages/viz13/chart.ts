@@ -81,7 +81,7 @@ export interface Viz13Chart {
   destroy: () => void;
 }
 
-export function createViz13Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz13Chart {
+export function createViz13Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'en'): Viz13Chart {
   let _lang = initLang;
   const allPoints: ScatterPoint[] = rows
     .map((r): ScatterPoint | null => {

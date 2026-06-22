@@ -102,7 +102,7 @@ export function createViz07Chart(
   container: HTMLElement,
   rows: TrackRow[],
   tip: VizTooltip,
-  initLang: Lang = 'fr',
+  initLang: Lang = 'en',
 ): Viz07Chart {
   const { bins: fullData, meta } = computeBins(rows);
   let _lang: Lang = initLang;

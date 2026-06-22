@@ -57,7 +57,7 @@ export interface Viz14Chart {
   destroy: () => void;
 }
 
-export function createViz14Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz14Chart {
+export function createViz14Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'en'): Viz14Chart {
   let pairIdx: HexPairIdx = 0, _lang = initLang;
 
   function render() {

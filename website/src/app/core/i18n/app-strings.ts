@@ -26,7 +26,7 @@ export function appStrings(_lang: Lang): AppStrings {
     navAria: 'Main navigation',
     themeLight: 'Switch to light mode',
     themeDark: 'Switch to dark mode',
-    langSwitch: 'Français',
+    langSwitch: 'Switch language',
     langLabel: 'Change language',
     userName: 'Music Analytics',
     userPlan: 'Spotify Dataset',

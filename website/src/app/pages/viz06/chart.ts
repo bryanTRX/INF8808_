@@ -44,7 +44,7 @@ function binnedMeans(data: ParsedTrack[], bins = 8) {
 }
 function sample<T>(arr: T[], n: number): T[] { if (arr.length <= n) return arr; return d3.range(n).map((i) => arr[Math.floor((i * arr.length) / n)]); }
 
-export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz06Chart {
+export function createViz06Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'en'): Viz06Chart {
   let _lang = initLang;
   const tracks = rows.map((r): ParsedTrack | null => {
     const a = Number(r.acousticness), p = Number(r.popularity);

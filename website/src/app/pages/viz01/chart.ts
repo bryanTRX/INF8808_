@@ -95,7 +95,7 @@ function buildFamilyData(rows: TrackRow[]): FamilyAvg[] {
 export interface Viz01Options {
   dimKeys: string[];
   selectedFamilyKeys: string[];
-  lang: 'en' | 'fr';
+  lang: 'en';
 }
 
 export interface Viz01Chart {

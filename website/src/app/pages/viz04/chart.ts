@@ -93,7 +93,7 @@ export interface Viz04Chart {
   destroy: () => void;
 }
 
-export function createViz04Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'fr'): Viz04Chart {
+export function createViz04Chart(container: HTMLElement, rows: TrackRow[], tip: VizTooltip, initLang: Lang = 'en'): Viz04Chart {
   const data = rows.filter((d) => Number.isFinite(Number(d.popularity)));
   let method: CorrelationMethod = 'pearson';
   let _lang: Lang = initLang;

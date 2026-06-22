@@ -80,7 +80,7 @@ export function createViz11Chart(
   container: HTMLElement,
   rows: TrackRow[],
   tip: VizTooltip,
-  initLang: Lang = 'fr',
+  initLang: Lang = 'en',
 ): Viz11Chart {
   let _lang = initLang;
 

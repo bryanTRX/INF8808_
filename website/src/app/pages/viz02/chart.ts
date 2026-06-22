@@ -10,7 +10,7 @@ export type SortOrder = 'asc' | 'desc' | 'alpha';
 
 export interface Viz02Options {
   sortOrder: SortOrder;
-  lang: 'en' | 'fr';
+  lang: 'en';
 }
 
 export interface Viz02Chart {

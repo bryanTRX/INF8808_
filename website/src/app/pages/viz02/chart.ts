@@ -129,30 +129,25 @@ export function createViz02Chart(
   }
 
   function getLabel(d: BoxDatum): string {
-    if (opts.lang === 'fr') {
-      const fam = GENRE_FAMILIES.find((f) => f.key === d.key);
-      return fam ? fam.fr.split(' /')[0].trim() : d.label;
-    }
     return d.label;
   }
 
   function getFullLabel(d: BoxDatum): string {
     const fam = GENRE_FAMILIES.find((f) => f.key === d.key);
-    return fam ? (opts.lang === 'fr' ? fam.fr : fam.en) : d.fullLabel;
+    return fam ? fam.en : d.fullLabel;
   }
 
   function makeTooltip(d: BoxDatum): string {
     const fmt = d3.format('.2f');
     const fmtN = d3.format(',');
-    const lang = opts.lang;
     const diff = d.median - popMedian;
     const diffStr = diff >= 0
-      ? `+${fmt(diff)} min ${lang === 'fr' ? 'au-dessus de la médiane pop' : 'above pop median'}`
-      : `${fmt(diff)} min ${lang === 'fr' ? 'en-dessous de la médiane pop' : 'below pop median'}`;
+      ? `+${fmt(diff)} min above pop median`
+      : `${fmt(diff)} min below pop median`;
 
     const outlierLine = d.outliers.length > 0
       ? `<div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-          <span style="color:var(--muted)">${lang === 'fr' ? 'Valeurs aberrantes' : 'Outliers'}</span>
+          <span style="color:var(--muted)">Outliers</span>
           <span class="tooltip-value">${d.outliers.length}</span>
         </div>` : '';
 
@@ -162,12 +157,12 @@ export function createViz02Chart(
         <strong style="font-size:0.9rem">${getFullLabel(d)}</strong>
       </div>
       <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.3rem">
-        ${fmtN(d.count)}&nbsp;${lang === 'fr' ? 'titres' : 'tracks'}
+        ${fmtN(d.count)}&nbsp;tracks
       </div>
       <div style="color:var(--muted);font-size:0.77rem;font-style:italic;margin-bottom:0.45rem">${d.subgenres.join(', ')}</div>
       <div style="border-top:1px solid var(--border);padding-top:0.45rem;font-size:0.82rem">
         <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-          <span style="color:var(--muted)">${lang === 'fr' ? 'Médiane' : 'Median'}</span>
+          <span style="color:var(--muted)">Median</span>
           <span class="tooltip-value">${fmt(d.median)} min</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
@@ -175,7 +170,7 @@ export function createViz02Chart(
           <span class="tooltip-value">${fmt(d.q1)} – ${fmt(d.q3)} min</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-          <span style="color:var(--muted)">${lang === 'fr' ? 'Moustaches' : 'Whiskers'}</span>
+          <span style="color:var(--muted)">Whiskers</span>
           <span class="tooltip-value">${fmt(d.wMin)} – ${fmt(d.wMax)} min</span>
         </div>
         ${outlierLine}
@@ -221,9 +216,7 @@ export function createViz02Chart(
       .attr('x', innerW / 2)
       .attr('y', -36)
       .attr('text-anchor', 'middle')
-      .text(lang === 'fr'
-        ? 'Distribution des durées de titres par famille de genres'
-        : 'Track Duration Distribution by Genre Family');
+      .text('Track Duration Distribution by Genre Family');
 
     // ── Grid ─────────────────────────────────────────────────────────────────
     g.append('g').attr('class', 'grid')
@@ -240,7 +233,7 @@ export function createViz02Chart(
       .attr('transform', 'rotate(-90)')
       .attr('x', -innerH / 2).attr('y', -44)
       .attr('text-anchor', 'middle')
-      .text(lang === 'fr' ? 'Durée (minutes)' : 'Duration (minutes)');
+      .text('Duration (minutes)');
 
     // ── X axis — horizontal labels ────────────────────────────────────────────
     g.append('g').attr('class', 'axis')
@@ -258,7 +251,7 @@ export function createViz02Chart(
       .attr('x', innerW / 2)
       .attr('y', innerH + 52)
       .attr('text-anchor', 'middle')
-      .text(lang === 'fr' ? 'Famille de genres' : 'Genre Family');
+      .text('Genre Family');
 
     // ── Pop median reference ──────────────────────────────────────────────────
     g.append('line')

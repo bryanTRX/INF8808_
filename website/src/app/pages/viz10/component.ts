@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -28,10 +28,6 @@ export class Viz10Component implements AfterViewInit, OnDestroy {
   private cleanupTheme?: () => void;
   private tip = createTooltip();
 
-  constructor() {
-    effect(() => { const l = this.langService.lang(); this.controller?.setLang(l); });
-  }
-
   ngAfterViewInit() {
     forkJoin({
       rows: this.dataService.loadDataset(),
@@ -45,7 +41,7 @@ export class Viz10Component implements AfterViewInit, OnDestroy {
             rows,
             performers,
             this.tip,
-            this.langService.lang(),
+            'en',
           );
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.controller?.resize());
           this.cleanupTheme = observeTheme(() => this.controller?.resize());

@@ -30,11 +30,6 @@ const GENRE_COLOR_MAP: Record<MajorGenre, string> = {
   metal:      '#64748b', // slate
 };
 
-const GENRE_LABELS_FR: Record<MajorGenre, string> = {
-  pop: 'Pop', rock: 'Rock', 'hip-hop': 'Hip-Hop', electronic: 'Électronique',
-  dance: 'Dance', indie: 'Indie', 'r&b': 'R&B', country: 'Country',
-  jazz: 'Jazz', classical: 'Classique', latin: 'Latin', metal: 'Métal',
-};
 const GENRE_LABELS_EN: Record<MajorGenre, string> = {
   pop: 'Pop', rock: 'Rock', 'hip-hop': 'Hip-Hop', electronic: 'Electronic',
   dance: 'Dance', indie: 'Indie', 'r&b': 'R&B', country: 'Country',
@@ -43,28 +38,16 @@ const GENRE_LABELS_EN: Record<MajorGenre, string> = {
 
 export const GENRE_LABELS = GENRE_LABELS_EN;
 
-const L = (lang: Lang) =>
-  lang === 'fr'
-    ? {
-        genreLabels: GENRE_LABELS_FR,
-        noGenre: 'Sélectionnez au moins un genre.',
-        tracks: 'titres',
-        axisY: 'Dansabilité',
-        axisX: 'Tempo (BPM)',
-        sharedLabel: 'Axes partagés',
-        resetLabel: 'Réinitialiser',
-        tip: { pop: 'Popularité', tempo: 'Tempo', dance: 'Dansabilité' },
-      }
-    : {
-        genreLabels: GENRE_LABELS_EN,
-        noGenre: 'Select at least one genre.',
-        tracks: 'tracks',
-        axisY: 'Danceability',
-        axisX: 'Tempo (BPM)',
-        sharedLabel: 'Shared axes',
-        resetLabel: 'Reset',
-        tip: { pop: 'Popularity', tempo: 'Tempo', dance: 'Danceability' },
-      };
+const L = (_lang: Lang) => ({
+  genreLabels: GENRE_LABELS_EN,
+  noGenre: 'Select at least one genre.',
+  tracks: 'tracks',
+  axisY: 'Danceability',
+  axisX: 'Tempo (BPM)',
+  sharedLabel: 'Shared axes',
+  resetLabel: 'Reset',
+  tip: { pop: 'Popularity', tempo: 'Tempo', dance: 'Danceability' },
+});
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

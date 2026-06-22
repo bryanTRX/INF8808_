@@ -61,75 +61,21 @@ const FEATURE_CONFIG_EN: FeatureConfig = {
   },
 };
 
-const FEATURE_CONFIG_FR: FeatureConfig = {
-  valence: {
-    title: 'Répartition de la valence par niveau de popularité',
-    categories: [
-      { key: 'low', label: 'Triste/Négatif (Bas)', color: '#f4a582', desc: 'Score inférieur à 0,33 — évoque la tristesse, la tension ou une émotion négative.', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Neutre (Moyen)', color: '#d6604d', desc: 'Score entre 0,33 et 0,66 — ton émotionnel mixte ou ambigu.', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Joyeux/Positif (Haut)', color: '#8b1a0e', desc: 'Score supérieur à 0,66 — évoque la joie, l\'euphorie ou la positivité.', classify: (v) => v > 0.66 },
-    ],
-  },
-  instrumentalness: {
-    title: 'Répartition de l\'instrumental par niveau de popularité',
-    categories: [
-      { key: 'vocal', label: 'Très vocal', color: '#f4a582', desc: 'Score inférieur à 0,1 — le titre est dominé par le chant ou la parole.', classify: (v) => v <= 0.1 },
-      { key: 'mixed', label: 'Mixte', color: '#d6604d', desc: 'Score entre 0,1 et 0,8 — mélange de voix et d\'instruments.', classify: (v) => v > 0.1 && v <= 0.8 },
-      { key: 'inst', label: 'Instrumental', color: '#8b1a0e', desc: 'Score supérieur à 0,8 — peu ou pas de voix.', classify: (v) => v > 0.8 },
-    ],
-  },
-  speechiness: {
-    title: 'Répartition de la parole par niveau de popularité',
-    categories: [
-      { key: 'low', label: 'Peu de parole', color: '#f4a582', desc: 'Score inférieur à 0,33 — principalement de la musique avec peu de mots parlés.', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Parole modérée', color: '#d6604d', desc: 'Score entre 0,33 et 0,66 — peut inclure du rap ou un contenu narratif.', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Très parlé', color: '#8b1a0e', desc: 'Score supérieur à 0,66 — contenu très parlé ou rap intense.', classify: (v) => v > 0.66 },
-    ],
-  },
-  danceability: {
-    title: 'Répartition de la dansabilité par niveau de popularité',
-    categories: [
-      { key: 'low', label: 'Peu dansable', color: '#f4a582', desc: 'Score inférieur à 0,33 — peu adapté à la danse.', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Moyennement dansable', color: '#d6604d', desc: 'Score entre 0,33 et 0,66 — rythme modéré, partiellement entraînant.', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Très dansable', color: '#8b1a0e', desc: 'Score supérieur à 0,66 — très rythmique et idéal pour danser.', classify: (v) => v > 0.66 },
-    ],
-  },
-  energy: {
-    title: 'Répartition de l\'énergie par niveau de popularité',
-    categories: [
-      { key: 'low', label: 'Faible énergie', color: '#f4a582', desc: 'Score inférieur à 0,33 — ambiance calme, douce ou acoustique.', classify: (v) => v <= 0.33 },
-      { key: 'mid', label: 'Énergie modérée', color: '#d6604d', desc: 'Score entre 0,33 et 0,66 — intensité et dynamique modérées.', classify: (v) => v > 0.33 && v <= 0.66 },
-      { key: 'high', label: 'Haute énergie', color: '#8b1a0e', desc: 'Score supérieur à 0,66 — fort, rapide et intense.', classify: (v) => v > 0.66 },
-    ],
-  },
-};
-
 export const FEATURE_LABELS_EN: Record<FeatureKey, string> = {
   valence: 'Valence', instrumentalness: 'Instrumentalness',
   speechiness: 'Speechiness', danceability: 'Danceability', energy: 'Energy',
 };
-export const FEATURE_LABELS_FR: Record<FeatureKey, string> = {
-  valence: 'Valence', instrumentalness: 'Instrumental',
-  speechiness: 'Parole', danceability: 'Dansabilité', energy: 'Énergie',
-};
 
-const L = (lang: Lang) => lang === 'fr' ? {
-  config: FEATURE_CONFIG_FR,
-  labels: FEATURE_LABELS_FR,
-  axisY: 'Proportion de titres (%)',
-  axisX: 'Niveau de popularité',
-  titlePrefix: '',
-  tipTracks: 'Titres',
-} : {
+const L = (_lang: Lang) => ({
   config: FEATURE_CONFIG_EN,
   labels: FEATURE_LABELS_EN,
   axisY: 'Percentage of Tracks (%)',
   axisX: 'Popularity Tier',
   titlePrefix: '',
   tipTracks: 'Tracks',
-};
+});
 
-export function getFeatureLabels(lang: Lang) { return lang === 'fr' ? FEATURE_LABELS_FR : FEATURE_LABELS_EN; }
+export function getFeatureLabels(_lang: Lang) { return FEATURE_LABELS_EN; }
 
 function popularityTier(pop: number): Tier {
   if (pop <= 19) return '0-19';

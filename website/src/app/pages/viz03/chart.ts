@@ -28,7 +28,6 @@ export interface Viz03Chart {
 interface FamilyStat {
   key: string;
   en: string;
-  fr: string;
   color: string;
   total: number;
   explicit: number;
@@ -78,7 +77,6 @@ function buildFamilyStats(rows: TrackRow[]): FamilyStat[] {
     return {
       key: fam.key,
       en: fam.en,
-      fr: fam.fr,
       color: fam.color,
       total: c.total,
       explicit: c.explicit,
@@ -110,15 +108,13 @@ export function createViz03Chart(
     return [...allStats].sort((a, b) => {
       if (opts.sortOrder === 'asc') return d3.ascending(a.explicitPct, b.explicitPct);
       if (opts.sortOrder === 'desc') return d3.descending(a.explicitPct, b.explicitPct);
-      return d3.ascending(opts.lang === 'fr' ? a.fr : a.en, opts.lang === 'fr' ? b.fr : b.en);
+      return d3.ascending(a.en, b.en);
     });
   }
 
-  function makeTooltip(d: FamilyStat, segment: 'clean' | 'explicit', lang: 'en' | 'fr'): string {
-    const famName = lang === 'fr' ? d.fr : d.en;
-    const segLabel = segment === 'clean'
-      ? (lang === 'fr' ? 'Propre' : 'Clean')
-      : (lang === 'fr' ? 'Explicite' : 'Explicit');
+  function makeTooltip(d: FamilyStat, segment: 'clean' | 'explicit', _lang?: string): string {
+    const famName = d.en;
+    const segLabel = segment === 'clean' ? 'Clean' : 'Explicit';
     const pct = segment === 'clean' ? d.cleanPct : d.explicitPct;
     const count = segment === 'clean' ? d.clean : d.explicit;
     const segColor = segment === 'clean' ? COLOR_CLEAN : COLOR_EXPLICIT;
@@ -138,15 +134,15 @@ export function createViz03Chart(
           <span class="tooltip-value" style="margin-left:auto">${d3.format('.1f')(pct)}%</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-          <span style="color:var(--muted)">${lang === 'fr' ? 'Titres (segment)' : 'Tracks (segment)'}</span>
+          <span style="color:var(--muted)">Tracks (segment)</span>
           <span class="tooltip-value">${d3.format(',')(count)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-          <span style="color:var(--muted)">${lang === 'fr' ? 'Total famille' : 'Family total'}</span>
+          <span style="color:var(--muted)">Family total</span>
           <span class="tooltip-value">${d3.format(',')(d.total)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-          <span style="color:var(--muted)">${lang === 'fr' ? 'Explicite' : 'Explicit'}</span>
+          <span style="color:var(--muted)">Explicit</span>
           <span class="tooltip-value">${d3.format('.1f')(d.explicitPct)}%</span>
         </div>
       </div>`;
@@ -194,14 +190,12 @@ export function createViz03Chart(
       .attr('class', 'chart-title')
       .attr('x', innerW / 2).attr('y', -34)
       .attr('text-anchor', 'middle')
-      .text(lang === 'fr'
-        ? 'Proportion de titres explicites vs propres par famille de genres'
-        : 'Explicit vs Clean Track Share by Genre Family');
+      .text('Explicit vs Clean Track Share by Genre Family');
 
     // Inline legend (top-right, compact)
     const legItems = [
-      { color: COLOR_CLEAN,    label: lang === 'fr' ? 'Propre'    : 'Clean'    },
-      { color: COLOR_EXPLICIT, label: lang === 'fr' ? 'Explicite' : 'Explicit' },
+      { color: COLOR_CLEAN,    label: 'Clean'    },
+      { color: COLOR_EXPLICIT, label: 'Explicit' },
     ];
     const legG = g.append('g').attr('transform', `translate(${innerW - 130}, -28)`);
     legItems.forEach(({ color, label }, i) => {
@@ -227,7 +221,7 @@ export function createViz03Chart(
       .attr('transform', 'rotate(-90)')
       .attr('x', -innerH / 2).attr('y', -42)
       .attr('text-anchor', 'middle')
-      .text(lang === 'fr' ? 'Proportion (%)' : 'Share (%)');
+      .text('Share (%)');
 
     // X axis ticks (no default text — we draw custom 2-line labels below)
     g.append('g').attr('class', 'axis')
@@ -237,7 +231,7 @@ export function createViz03Chart(
     // Custom 2-line horizontal labels under each bar
     data.forEach((d) => {
       const cx = x(d.key)! + x.bandwidth() / 2;
-      const fullName = lang === 'fr' ? d.fr : d.en;
+      const fullName = d.en;
       // Split on ' / ' to get two lines; if no '/', just one line
       const parts = fullName.includes(' / ') ? fullName.split(' / ') : [fullName];
 
@@ -259,7 +253,7 @@ export function createViz03Chart(
       .attr('y', innerH + 82)
       .attr('text-anchor', 'middle')
       .style('font-size', '11.5px').style('font-weight', '600')
-      .text(lang === 'fr' ? 'Famille de genres' : 'Genre Family');
+      .text('Genre Family');
 
     // Stacked bars
     const segmentColors: Record<string, string> = { cleanPct: COLOR_CLEAN, explicitPct: COLOR_EXPLICIT };

@@ -17,22 +17,7 @@ const RADAR_AXES: { key: string; kind: AxisKind }[] = [
   { key: 'durationMinutes', kind: 'duration' },
 ];
 
-const L = (lang: Lang) => lang === 'fr' ? {
-  axes: {
-    danceability: 'Dansabilité',
-    energy: 'Énergie',
-    valence: 'Valence',
-    acousticness: 'Acousticité',
-    tempo: 'Tempo',
-    loudness: 'Volume',
-    popularity: 'Popularité',
-    durationMinutes: 'Durée',
-  },
-  comparisonTitle: 'Comparaison des profils audio',
-  tracks: 'titres',
-  clickHint: 'Cliquez sur un artiste pour l\'ajouter ou le retirer de la comparaison.',
-  norm: 'norm',
-} : {
+const L = (_lang: Lang) => ({
   axes: {
     danceability: 'Danceability',
     energy: 'Energy',
@@ -47,7 +32,7 @@ const L = (lang: Lang) => lang === 'fr' ? {
   tracks: 'tracks',
   clickHint: 'Click an artist to add or remove them from the comparison.',
   norm: 'norm',
-};
+});
 
 interface ParsedTrack {
   id: string;

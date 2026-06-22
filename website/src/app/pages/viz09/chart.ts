@@ -29,29 +29,10 @@ const MODES_EN: Record<HeatmapMode, ModeDef> = {
     color: d3.interpolatePlasma, btnLabel: 'Speech / Dance',
   },
 };
-const MODES_FR: Record<HeatmapMode, ModeDef> = {
-  'energy-loudness': {
-    title: 'Énergie et volume — Densité des titres sur tous les genres',
-    xKey: 'energy', yKey: 'loudness',
-    xLabel: 'Énergie (0,0 à 1,0)', yLabel: 'Volume (décibels)',
-    xDomain: [0, 1], yDomain: [-60, 0],
-    color: d3.interpolateViridis, btnLabel: 'Énergie / Volume',
-  },
-  'speech-dance': {
-    title: 'Présence vocale et dansabilité — Densité des titres sur tous les genres',
-    xKey: 'speechiness', yKey: 'danceability',
-    xLabel: 'Parole (0,0 à 1,0)', yLabel: 'Dansabilité (0,0 à 1,0)',
-    xDomain: [0, 1], yDomain: [0, 1],
-    color: d3.interpolatePlasma, btnLabel: 'Parole / Danse',
-  },
-};
+const L = (_lang: Lang) => ({ modes: MODES_EN, trackCount: 'Track Count' });
 
-const L = (lang: Lang) => lang === 'fr'
-  ? { modes: MODES_FR, trackCount: 'Nombre de titres' }
-  : { modes: MODES_EN, trackCount: 'Track Count' };
-
-export function getModeLabels(lang: Lang): Record<HeatmapMode, string> {
-  const m = L(lang).modes;
+export function getModeLabels(_lang: Lang): Record<HeatmapMode, string> {
+  const m = L(_lang).modes;
   return { 'energy-loudness': m['energy-loudness'].btnLabel, 'speech-dance': m['speech-dance'].btnLabel };
 }
 

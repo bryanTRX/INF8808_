@@ -15,7 +15,7 @@
             [checked]="isSelected(g)"
             (change)="toggleGenre(g, $any($event.target).checked)"
             style="display:none">
-          {{ langService.lang() === 'fr' ? genreLabelsFr[g] : genreLabelsEn[g] }}
+          {{ genreLabelsEn[g] }}
         </label>
       }
     </div>
@@ -29,11 +29,11 @@
           [(ngModel)]="sharedScales"
           (ngModelChange)="refresh()"
           style="display:none">
-        {{ langService.lang() === 'fr' ? 'Axes partagés' : 'Shared axes' }}
+        Shared axes
       </label>
 
       <button type="button" (click)="reset()">
-        {{ langService.lang() === 'fr' ? 'Réinitialiser' : 'Reset' }}
+        Reset
       </button>
 
     </div>

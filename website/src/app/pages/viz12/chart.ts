@@ -38,21 +38,14 @@ export interface Viz12State {
   search: string;
 }
 
-const L = (lang: Lang) => lang === 'fr' ? {
-  titleAll: (n: number) => `Distribution de la popularité sur ${n} titres`,
-  hintAll: 'Chaque point représente un titre. Sa position indique son score de popularité Spotify, de 0 à 100.',
-  titleGenre: (n: number) => `Popularité par genre sur ${n} titres`,
-  hintGenre: 'Une rangée par genre. La position horizontale indique la popularité.',
-  axisX: 'Popularité Spotify (de 0 à 100)',
-  tip: { genre: 'Genre', pop: 'Popularité' },
-} : {
+const L = (_lang: Lang) => ({
   titleAll: (n: number) => `Popularity Distribution across ${n} tracks`,
   hintAll: 'Each dot represents one track. Its horizontal position shows the Spotify popularity score from 0 to 100.',
   titleGenre: (n: number) => `Popularity by Genre across ${n} tracks`,
   hintGenre: 'One row per genre. The horizontal position shows popularity.',
   axisX: 'Spotify Popularity (0 to 100)',
   tip: { genre: 'Genre', pop: 'Popularity' },
-};
+});
 
 export interface Viz12Chart {
   update: (s: Viz12State) => void;

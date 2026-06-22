@@ -4,31 +4,20 @@ import { TrackRow } from '../../core/models/track-row';
 import { CHART, styleAxis } from '../../viz-shared/utils/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
 
-const HEX_PAIRS_FR = [
-  { xKey: 'energy'       as const, yKey: 'loudness'   as const, xLabel: 'Énergie',      yLabel: 'Volume (dB)',   xDom: [0,1]    as [number,number], yDom: [-60,0]  as [number,number] },
-  { xKey: 'danceability' as const, yKey: 'valence'    as const, xLabel: 'Dansabilité',   yLabel: 'Valence',       xDom: [0,1]    as [number,number], yDom: [0,1]    as [number,number] },
-  { xKey: 'acousticness' as const, yKey: 'energy'     as const, xLabel: 'Acoustique',    yLabel: 'Énergie',       xDom: [0,1]    as [number,number], yDom: [0,1]    as [number,number] },
-  { xKey: 'tempo'        as const, yKey: 'popularity' as const, xLabel: 'Tempo (BPM)',   yLabel: 'Popularité',    xDom: [50,220] as [number,number], yDom: [0,100]  as [number,number] },
-] as const;
 const HEX_PAIRS_EN = [
   { xKey: 'energy'       as const, yKey: 'loudness'   as const, xLabel: 'Energy',        yLabel: 'Loudness (dB)', xDom: [0,1]    as [number,number], yDom: [-60,0]  as [number,number] },
   { xKey: 'danceability' as const, yKey: 'valence'    as const, xLabel: 'Danceability',   yLabel: 'Valence',       xDom: [0,1]    as [number,number], yDom: [0,1]    as [number,number] },
   { xKey: 'acousticness' as const, yKey: 'energy'     as const, xLabel: 'Acoustic',       yLabel: 'Energy',        xDom: [0,1]    as [number,number], yDom: [0,1]    as [number,number] },
   { xKey: 'tempo'        as const, yKey: 'popularity' as const, xLabel: 'Tempo (BPM)',    yLabel: 'Popularity',    xDom: [50,220] as [number,number], yDom: [0,100]  as [number,number] },
 ] as const;
-export const HEX_PAIRS = HEX_PAIRS_FR;
-export function getHexPairs(lang: Lang) { return lang === 'fr' ? HEX_PAIRS_FR as readonly HexPairDef[] : HEX_PAIRS_EN as readonly HexPairDef[]; }
-const L = (lang: Lang) => lang === 'fr' ? {
-  pairs: HEX_PAIRS_FR as readonly HexPairDef[],
-  title: (y: string, x: string) => `Densité hexagonale : ${y} vs ${x}`,
-  hint: 'Chaque hexagone représente la concentration de titres dans cette zone. Plus il est foncé, plus il contient de titres.',
-  tracks: 'Titres',
-} : {
+export const HEX_PAIRS = HEX_PAIRS_EN;
+export function getHexPairs(_lang: Lang) { return HEX_PAIRS_EN as readonly HexPairDef[]; }
+const L = (_lang: Lang) => ({
   pairs: HEX_PAIRS_EN as readonly HexPairDef[],
   title: (y: string, x: string) => `Hexagonal Density: ${y} vs ${x}`,
   hint: 'Each hexagon shows how many tracks fall in that area. Darker hexagons indicate a higher concentration of tracks.',
   tracks: 'Tracks',
-};
+});
 
 export type HexPairIdx = 0 | 1 | 2 | 3;
 

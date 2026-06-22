@@ -16,12 +16,6 @@ const FEATURE_LABELS_EN: Record<Feature, string> = {
   tempo: 'Tempo', acousticness: 'Acousticness', speechiness: 'Speechiness',
   instrumentalness: 'Instrumentalness', duration_ms: 'Duration',
 };
-const FEATURE_LABELS_FR: Record<Feature, string> = {
-  danceability: 'Dansabilité', energy: 'Énergie', valence: 'Valence', loudness: 'Volume',
-  tempo: 'Tempo', acousticness: 'Acoustique', speechiness: 'Parole',
-  instrumentalness: 'Instrumental', duration_ms: 'Durée',
-};
-
 const FEATURE_DESCRIPTIONS_EN: Record<Feature, string> = {
   danceability: 'How suitable a track is for dancing.',
   energy: 'The intensity and activity level of the track.',
@@ -33,27 +27,7 @@ const FEATURE_DESCRIPTIONS_EN: Record<Feature, string> = {
   instrumentalness: 'How likely the track contains no vocals.',
   duration_ms: 'The total duration of the track in milliseconds.',
 };
-const FEATURE_DESCRIPTIONS_FR: Record<Feature, string> = {
-  danceability: 'À quel point un titre est adapté à la danse.',
-  energy: 'Le niveau d\'intensité et d\'activité du titre.',
-  valence: 'La positivité musicale véhiculée par le titre.',
-  loudness: 'Le volume général du titre en décibels.',
-  tempo: 'La vitesse du titre en battements par minute.',
-  acousticness: 'La probabilité que le titre soit acoustique.',
-  speechiness: 'La présence de mots parlés dans le titre.',
-  instrumentalness: 'La probabilité que le titre ne contienne pas de voix.',
-  duration_ms: 'La durée totale du titre en millisecondes.',
-};
-
-const L = (lang: Lang) => lang === 'fr' ? {
-  labels: FEATURE_LABELS_FR,
-  descriptions: FEATURE_DESCRIPTIONS_FR,
-  title: 'Corrélation entre les caractéristiques audio et la popularité',
-  subtitle: (method: string) => `Classées par corrélation ${method === 'spearman' ? 'de Spearman' : 'de Pearson'} avec la popularité Spotify.`,
-  axisLabel: (method: string) => `Coefficient de corrélation ${method === 'spearman' ? 'de Spearman' : 'de Pearson'}`,
-  tipMethod: 'Méthode',
-  tipCorr: 'Corrélation',
-} : {
+const L = (_lang: Lang) => ({
   labels: FEATURE_LABELS_EN,
   descriptions: FEATURE_DESCRIPTIONS_EN,
   title: 'Correlation Between Audio Features and Popularity',
@@ -61,7 +35,7 @@ const L = (lang: Lang) => lang === 'fr' ? {
   axisLabel: (method: string) => `${method === 'spearman' ? 'Spearman' : 'Pearson'} correlation coefficient`,
   tipMethod: 'Method',
   tipCorr: 'Correlation',
-};
+});
 
 export type CorrelationMethod = 'pearson' | 'spearman';
 

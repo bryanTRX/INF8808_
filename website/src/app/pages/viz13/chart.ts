@@ -4,17 +4,6 @@ import { TrackRow } from '../../core/models/track-row';
 import { CHART, styleAxis } from '../../viz-shared/utils/chart-theme';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
 
-const AXES_FR = [
-  { key: 'popularity'       as const, label: 'Popularité',    domain: [0, 100]   as [number, number] },
-  { key: 'energy'           as const, label: 'Énergie',       domain: [0, 1]     as [number, number] },
-  { key: 'danceability'     as const, label: 'Dansabilité',   domain: [0, 1]     as [number, number] },
-  { key: 'valence'          as const, label: 'Valence',       domain: [0, 1]     as [number, number] },
-  { key: 'acousticness'     as const, label: 'Acoustique',    domain: [0, 1]     as [number, number] },
-  { key: 'speechiness'      as const, label: 'Parole',        domain: [0, 1]     as [number, number] },
-  { key: 'instrumentalness' as const, label: 'Instrumental',  domain: [0, 1]     as [number, number] },
-  { key: 'loudness'         as const, label: 'Volume (dB)',   domain: [-60, 0]   as [number, number] },
-  { key: 'tempo'            as const, label: 'Tempo (BPM)',   domain: [50, 220]  as [number, number] },
-];
 const AXES_EN = [
   { key: 'popularity'       as const, label: 'Popularity',    domain: [0, 100]   as [number, number] },
   { key: 'energy'           as const, label: 'Energy',        domain: [0, 1]     as [number, number] },
@@ -26,19 +15,14 @@ const AXES_EN = [
   { key: 'loudness'         as const, label: 'Loudness (dB)', domain: [-60, 0]   as [number, number] },
   { key: 'tempo'            as const, label: 'Tempo (BPM)',   domain: [50, 220]  as [number, number] },
 ];
-export const SCATTER_AXES = AXES_FR;
-export function getScatterAxes(lang: Lang) { return lang === 'fr' ? AXES_FR : AXES_EN; }
-const L = (lang: Lang) => lang === 'fr' ? {
-  axes: AXES_FR,
-  title: (y: string, x: string) => `${y} en fonction de ${x}`,
-  hint: (n: number) => `${d3.format(',')(n)} titres affichés. La couleur représente le genre. Sélectionnez les axes depuis les contrôles ci-dessus.`,
-  tip: { genre: 'Genre' },
-} : {
+export const SCATTER_AXES = AXES_EN;
+export function getScatterAxes(_lang: Lang) { return AXES_EN; }
+const L = (_lang: Lang) => ({
   axes: AXES_EN,
   title: (y: string, x: string) => `${y} as a function of ${x}`,
   hint: (n: number) => `${d3.format(',')(n)} tracks shown. Color indicates genre. Select the axes from the controls above.`,
   tip: { genre: 'Genre' },
-};
+});
 
 export type ScatterAxisKey = (typeof SCATTER_AXES)[number]['key'];
 

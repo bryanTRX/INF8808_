@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -35,18 +35,14 @@ export class Viz11Component implements AfterViewInit, OnDestroy {
   private cleanupTheme?: () => void;
   private tip = createTooltip();
 
-  constructor() {
-    effect(() => { const l = this.langService.lang(); this.controller?.setLang(l); });
-  }
 
   get ui() {
-    const fr = this.langService.lang() === 'fr';
     return {
-      artistLabel:  fr ? 'Artiste' : 'Artist',
-      trackLabel:   fr ? 'Titre' : 'Track',
-      threshold:    fr ? 'Pop. min.' : 'Min. pop.',
-      pickArtist:   fr ? '— Choisir un artiste —' : '— Pick an artist —',
-      pickTrack:    fr ? '— Choisir un titre —' : '— Pick a track —',
+      artistLabel:  'Artist',
+      trackLabel:   'Track',
+      threshold:    'Min. pop.',
+      pickArtist:   '— Pick an artist —',
+      pickTrack:    '— Pick a track —',
     };
   }
 
@@ -77,7 +73,7 @@ export class Viz11Component implements AfterViewInit, OnDestroy {
           }
 
           this.controller = createViz11Chart(
-            this.chartRef.nativeElement, rows, this.tip, this.langService.lang(),
+            this.chartRef.nativeElement, rows, this.tip, 'en',
           );
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.controller?.resize());
           this.cleanupTheme = observeTheme(() => this.controller?.resize());

@@ -47,14 +47,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   }
 
   readonly theme = this.themeService.mode;
-  readonly lang = this.langService.lang;
 
   toggleTheme() {
     this.themeService.toggle();
-  }
-
-  toggleLang() {
-    this.langService.toggle();
   }
 
   scrollTo(anchor: string, event?: Event) {

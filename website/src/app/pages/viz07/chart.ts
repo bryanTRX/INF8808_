@@ -4,38 +4,21 @@ import { TrackRow } from '../../core/models/track-row';
 import { VizTooltip } from '../../viz-shared/utils/tooltip';
 import type { Lang } from '../../core/services/lang.service';
 
-const L = (lang: Lang) =>
-  lang === 'fr'
-    ? {
-        axisX: 'Durée (min : sec)',
-        axisY: 'Popularité moyenne',
-        avgLabel: 'Moy. générale',
-        songs: 'titres',
-        rank: 'Rang',
-        of: 'sur',
-        avg: 'Moy.',
-        median: 'Médiane',
-        tipAvg: 'Moy. popularité',
-        tipMedian: 'Médiane',
-        tipCount: 'Titres',
-        tipRank: 'Rang',
-        hoverDefault: 'Survolez une barre pour voir la popularité moyenne pour cette durée.',
-      }
-    : {
-        axisX: 'Song length (min : sec)',
-        axisY: 'Average popularity',
-        avgLabel: 'Overall avg.',
-        songs: 'tracks',
-        rank: 'Rank',
-        of: 'of',
-        avg: 'Avg.',
-        median: 'Median',
-        tipAvg: 'Avg. popularity',
-        tipMedian: 'Median',
-        tipCount: 'Tracks',
-        tipRank: 'Rank',
-        hoverDefault: 'Hover a bar to see average popularity for that length range.',
-      };
+const L = (_lang: Lang) => ({
+  axisX: 'Song length (min : sec)',
+  axisY: 'Average popularity',
+  avgLabel: 'Overall avg.',
+  songs: 'tracks',
+  rank: 'Rank',
+  of: 'of',
+  avg: 'Avg.',
+  median: 'Median',
+  tipAvg: 'Avg. popularity',
+  tipMedian: 'Median',
+  tipCount: 'Tracks',
+  tipRank: 'Rank',
+  hoverDefault: 'Hover a bar to see average popularity for that length range.',
+});
 
 export interface DurationBin {
   bin_start: number;

@@ -6,7 +6,7 @@
     <!-- Feature checkboxes -->
     <div class="control-group" style="flex-wrap:wrap;align-items:center;gap:0.4rem 0.6rem">
       <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;flex-shrink:0;margin-right:0.25rem">
-        {{ langService.lang() === 'fr' ? 'Caractéristiques' : 'Features' }}
+        Features
       </span>
       @for (dim of dimControls; track dim.key) {
         <label class="chip-label">
@@ -16,7 +16,7 @@
             (change)="onDimChange()"
             [disabled]="dim.checked && !canUncheck"
             style="display:none">
-          {{ langService.lang() === 'fr' ? dim.fr : dim.en }}
+          {{ dim.en }}
         </label>
       }
     </div>

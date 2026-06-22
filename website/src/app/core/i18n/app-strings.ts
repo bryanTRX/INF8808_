@@ -19,29 +19,7 @@ export interface AppStrings {
   epilogueBody: string;
 }
 
-export function appStrings(lang: Lang): AppStrings {
-  if (lang === 'fr') {
-    return {
-      navHome: 'Accueil',
-      navVisualizations: 'Visualisations',
-      navAria: 'Navigation principale',
-      themeLight: 'Passer en mode clair',
-      themeDark: 'Passer en mode sombre',
-      langSwitch: 'English',
-      langLabel: 'Changer la langue',
-      userName: 'Analytique musicale',
-      userPlan: 'Jeu de données Spotify',
-      logoAlt: 'Logo MusicInsights',
-      projectLabel: 'Projet INF8808E',
-      chapterInsight: 'Idée clé',
-      chapterGuide: 'Comment lire ce graphique',
-      epilogueEyebrow: 'Fin de la visite',
-      epilogueTitle: 'Des mesures aux émotions',
-      epilogueBody:
-        'Les chiffres ne remplacent jamais l’émotion d’une chanson, mais ils peuvent révéler les motifs que nous ressentons. Les genres suivent des motifs, la popularité récompense certaines qualités plus que d’autres, et chaque artiste laisse une empreinte.',
-    };
-  }
-
+export function appStrings(_lang: Lang): AppStrings {
   return {
     navHome: 'Home',
     navVisualizations: 'Visualizations',

@@ -10,19 +10,13 @@ const GENRES = [
   { id: 'rock' as const, label: 'Rock', color: '#e05252' },
 ];
 
-const L = (lang: Lang) => lang === 'fr' ? {
-  tracks: 'titres', axisY: 'Popularité (0–100)',
-  axisX: 'Niveau acoustique (de 0 = production électronique à 1 = acoustique pur)',
-  labels: { low: 'peu acoustique', mid: 'mixte', high: 'très acoustique' },
-  legend: ['Tendance (régression)', 'Moyenne par tranche'],
-  tip: { acoustic: 'Acoustique', pop: 'Popularité' },
-} : {
+const L = (_lang: Lang) => ({
   tracks: 'tracks', axisY: 'Popularity (0–100)',
   axisX: 'Acousticness (0 = fully produced, 1 = fully acoustic)',
   labels: { low: 'not acoustic', mid: 'mixed', high: 'very acoustic' },
   legend: ['Trend (regression)', 'Binned mean'],
   tip: { acoustic: 'Acousticness', pop: 'Popularity' },
-};
+});
 
 interface ParsedTrack { trackId: string; artists: string; trackName: string; acousticness: number; popularity: number; genre: 'pop' | 'rock'; trackGenre: string }
 

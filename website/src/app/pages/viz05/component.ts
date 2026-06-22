@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -7,11 +7,6 @@ import { deferChartInit } from '../../viz-shared/utils/init-chart';
 import { observeTheme } from '../../viz-shared/utils/observe-theme';
 import { createViz05Chart, MAJOR_GENRES, Viz05Chart, Viz05State } from './chart';
 
-const GENRE_LABELS_FR: Record<string, string> = {
-  pop: 'Pop', rock: 'Rock', 'hip-hop': 'Hip-Hop', electronic: 'Électronique',
-  dance: 'Dance', indie: 'Indie', 'r&b': 'R&B', country: 'Country',
-  jazz: 'Jazz', classical: 'Classique', latin: 'Latin', metal: 'Métal',
-};
 const GENRE_LABELS_EN: Record<string, string> = {
   pop: 'Pop', rock: 'Rock', 'hip-hop': 'Hip-Hop', electronic: 'Electronic',
   dance: 'Dance', indie: 'Indie', 'r&b': 'R&B', country: 'Country',
@@ -29,7 +24,6 @@ import { VizLoadState } from '../../core/i18n/viz-load-state';
 export class Viz05Component implements AfterViewInit, OnDestroy {
   @ViewChild('chart', { static: true }) chartRef!: ElementRef<HTMLElement>;
   readonly genres = MAJOR_GENRES;
-  readonly genreLabelsFr = GENRE_LABELS_FR;
   readonly genreLabelsEn = GENRE_LABELS_EN;
   selectedGenres = new Set(['pop', 'rock', 'hip-hop', 'electronic', 'jazz', 'classical']);
   sampleSize = 250;
@@ -43,15 +37,11 @@ export class Viz05Component implements AfterViewInit, OnDestroy {
   private cleanupTheme?: () => void;
   private tip = createTooltip();
 
-  constructor() {
-    effect(() => { const l = this.langService.lang(); this.controller?.setLang(l); });
-  }
-
   ngAfterViewInit() {
     this.dataService.loadDataset().subscribe({
       next: (rows) => {
         deferChartInit(() => {
-          this.controller = createViz05Chart(this.chartRef.nativeElement, rows, this.tip, this.langService.lang());
+          this.controller = createViz05Chart(this.chartRef.nativeElement, rows, this.tip, 'en');
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.refresh());
           this.cleanupTheme = observeTheme(() => this.refresh());
           this.refresh();

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VizDataService } from '../../core/services/viz-data.service';
 import { createTooltip } from '../../viz-shared/utils/tooltip';
@@ -27,15 +27,11 @@ export class Viz14Component implements AfterViewInit, OnDestroy {
   private cleanupResize?: () => void;
   private tip = createTooltip();
 
-  constructor() {
-    effect(() => { const l = this.langService.lang(); this.controller?.setLang(l); });
-  }
-
   ngAfterViewInit() {
     this.dataService.loadDataset().subscribe({
       next: (rows) => {
         deferChartInit(() => {
-          this.controller = createViz14Chart(this.chartRef.nativeElement, rows, this.tip, this.langService.lang());
+          this.controller = createViz14Chart(this.chartRef.nativeElement, rows, this.tip, 'en');
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () => this.controller?.resize());
           this.loadState.setLoaded(rows.length);
         });

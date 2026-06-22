@@ -1,9 +1,7 @@
 <section class="viz-page">
   <header>
-    <h1>{{ langService.lang() === 'fr' ? 'Densité hexagonale 2D' : '2D Hexagonal Density' }}</h1>
-    <p class="subtitle">{{ langService.lang() === 'fr'
-      ? 'Où se concentrent les 90 000 titres Spotify dans l\'espace audio ? Plus un hexagone est foncé, plus il représente une zone à forte densité de titres.'
-      : 'Where do the 90,000 Spotify tracks cluster in audio space? Darker hexagons indicate a higher concentration of tracks in that region.' }}</p>
+    <h1>2D Hexagonal Density</h1>
+    <p class="subtitle">Where do the 90,000 Spotify tracks cluster in audio space? Darker hexagons indicate a higher concentration of tracks in that region.</p>
   </header>
   <p class="status">{{ loadState.status() }}</p>
   <div class="controls">

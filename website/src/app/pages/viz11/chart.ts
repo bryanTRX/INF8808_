@@ -20,16 +20,7 @@ export interface TrackSearchResult {
   popularity: number;
 }
 
-const L = (lang: Lang) => lang === 'fr' ? {
-  title: (artist: string) => `Popularité du catalogue de ${artist}`,
-  hint: 'Chaque point représente un titre. Sa position indique son score de popularité Spotify.',
-  axisX: 'Popularité Spotify (0–100)',
-  avgLabel: 'Moy. artiste',
-  selectedLabel: 'Titre sélectionné',
-  tracks: 'titres',
-  tip: { pop: 'Popularité', album: 'Album', artist: 'Artiste' },
-  noArtist: 'Recherchez un titre pour afficher le catalogue de son artiste.',
-} : {
+const L = (_lang: Lang) => ({
   title: (artist: string) => `Popularity within ${artist}'s catalog`,
   hint: 'Each dot represents one track. Its horizontal position shows the Spotify popularity score.',
   axisX: 'Spotify Popularity (0–100)',
@@ -38,7 +29,7 @@ const L = (lang: Lang) => lang === 'fr' ? {
   tracks: 'tracks',
   tip: { pop: 'Popularity', album: 'Album', artist: 'Artist' },
   noArtist: 'Search for a track to display its artist\'s catalog.',
-};
+});
 
 function dodge(points: ArtistTrack[], radius: number, x: (p: ArtistTrack) => number): void {
   const sorted = points.slice().sort((a, b) => a.popularity - b.popularity);

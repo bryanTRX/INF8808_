@@ -4,7 +4,6 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
-  effect,
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -37,20 +36,9 @@ export class Viz02Component implements AfterViewInit, OnDestroy {
   private cleanupTheme?: () => void;
   private tip = createTooltip();
 
-  constructor() {
-    effect(() => {
-      const lang = this.langService.lang() as 'en' | 'fr';
-      this.controller?.update({ lang });
-    });
-  }
-
-  get lang(): 'en' | 'fr' {
-    return this.langService.lang() as 'en' | 'fr';
-  }
-
   setSortOrder(order: SortOrder) {
     this.sortOrder = order;
-    this.controller?.update({ sortOrder: order, lang: this.lang });
+    this.controller?.update({ sortOrder: order, lang: 'en' });
   }
 
   ngAfterViewInit() {
@@ -61,7 +49,7 @@ export class Viz02Component implements AfterViewInit, OnDestroy {
             this.chartRef.nativeElement,
             rows,
             this.tip,
-            { sortOrder: this.sortOrder, lang: this.lang },
+            { sortOrder: this.sortOrder, lang: 'en' },
           );
           this.cleanupResize = observeResize(this.chartRef.nativeElement, () =>
             this.controller?.resize(),

@@ -12,19 +12,18 @@ export { GENRE_FAMILIES };
 export interface DimDef {
   key: string;
   en: string;
-  fr: string;
   domain: [number, number];
   fmt: (v: number) => string;
 }
 
 export const ALL_DIMS: DimDef[] = [
-  { key: 'danceability', en: 'Danceability', fr: 'Dansabilité', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'energy', en: 'Energy', fr: 'Énergie', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'acousticness', en: 'Acousticness', fr: 'Acousticité', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'valence', en: 'Valence', fr: 'Valence', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'speechiness', en: 'Speechiness', fr: 'Parole', domain: [0, 0.5], fmt: d3.format('.2f') },
-  { key: 'instrumentalness', en: 'Instrumentalness', fr: 'Instrumentalité', domain: [0, 1], fmt: d3.format('.2f') },
-  { key: 'tempo', en: 'Tempo (BPM)', fr: 'Tempo (BPM)', domain: [60, 180], fmt: d3.format('.0f') },
+  { key: 'danceability', en: 'Danceability', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'energy', en: 'Energy', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'acousticness', en: 'Acousticness', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'valence', en: 'Valence', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'speechiness', en: 'Speechiness', domain: [0, 0.5], fmt: d3.format('.2f') },
+  { key: 'instrumentalness', en: 'Instrumentalness', domain: [0, 1], fmt: d3.format('.2f') },
+  { key: 'tempo', en: 'Tempo (BPM)', domain: [60, 180], fmt: d3.format('.0f') },
 ];
 
 export const DEFAULT_DIM_KEYS = ['danceability', 'energy', 'acousticness', 'valence', 'tempo'];
@@ -142,14 +141,14 @@ export function createViz01Chart(
     return true;
   }
 
-  function makeTooltip(d: FamilyAvg, dims: DimDef[], lang: 'en' | 'fr'): string {
-    const famName = lang === 'fr' ? d.family.fr : d.family.en;
+  function makeTooltip(d: FamilyAvg, dims: DimDef[], _lang?: string): string {
+    const famName = d.family.en;
     const subList = d.subgenres.join(', ');
     const dimRows = dims
       .map(
         (dim) =>
           `<div style="display:flex;justify-content:space-between;gap:1.5rem;line-height:1.9">
-            <span style="color:var(--muted)">${lang === 'fr' ? dim.fr : dim.en}</span>
+            <span style="color:var(--muted)">${dim.en}</span>
             <span class="tooltip-value">${dim.fmt(d.values[dim.key] ?? 0)}</span>
           </div>`,
       )
@@ -161,7 +160,7 @@ export function createViz01Chart(
         <strong style="font-size:0.9rem">${famName}</strong>
       </div>
       <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.3rem">
-        ${d3.format(',')(d.trackCount)}&nbsp;${lang === 'fr' ? 'titres' : 'tracks'}
+        ${d3.format(',')(d.trackCount)}&nbsp;tracks
       </div>
       <div style="color:var(--muted);font-size:0.77rem;font-style:italic;margin-bottom:0.55rem">${subList}</div>
       <div style="border-top:1px solid var(--border);padding-top:0.45rem;font-size:0.82rem">
@@ -207,11 +206,7 @@ export function createViz01Chart(
       .attr('x', innerW / 2)
       .attr('y', -42)
       .attr('text-anchor', 'middle')
-      .text(
-        lang === 'fr'
-          ? `Profil audio moyen par famille de genres`
-          : `Average Audio Profile by Genre Family`,
-      );
+      .text('Average Audio Profile by Genre Family');
 
     // Scales
     const x = d3
@@ -319,7 +314,7 @@ export function createViz01Chart(
         .attr('text-anchor', 'middle')
         .style('font-weight', '600')
         .style('font-size', '11px')
-        .text(lang === 'fr' ? dim.fr : dim.en);
+        .text(dim.en);
 
       // Brush
       const brush = d3
@@ -401,7 +396,7 @@ export function createViz01Chart(
         .attr('x', 18)
         .attr('class', 'legend-label')
         .style('font-size', '11px')
-        .text(lang === 'fr' ? d.family.fr : d.family.en);
+        .text(d.family.en);
 
       // Click to toggle
       item.on('click', () => {
@@ -419,7 +414,7 @@ export function createViz01Chart(
       // Tooltip on hover
       item
         .on('mouseover', (event) => {
-          const famName = lang === 'fr' ? d.family.fr : d.family.en;
+          const famName = d.family.en;
           tip.show(
             event,
             `<div style="margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem">
@@ -427,7 +422,7 @@ export function createViz01Chart(
               <strong>${famName}</strong>
             </div>
             <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.3rem">
-              ${lang === 'fr' ? 'Sous-genres inclus' : 'Included subgenres'}:
+              Included subgenres:
             </div>
             <div style="font-size:0.82rem">${d.subgenres.join(', ')}</div>`,
           );

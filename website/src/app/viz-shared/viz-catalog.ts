@@ -40,7 +40,7 @@ export const VIZ_CATALOG: VizEntry[] = [
     source: 'viz-2 (Plotly → D3)',
     chapter: 'Chapter 02 — How long is a song?',
     narrative: 'Song length is one of the quietest conventions in music, because listeners rarely notice it. These box plots show the full distribution of track durations across ten genre families. The dashed reference line marks the median duration for the Electronic family as a baseline for comparison.',
-    insight: 'Out of the 4 categories of genres identified in the last visualization, only 2 have consisident durations : first Classical / Instrumental and Ambient / Chill; then second Pop, Latin / World and R&B / Soul. The largest boxes of Electronic and Jazz indicates that many different track lengths are common. Folk, Rock and Hip-Hop have less diversity and their boxes are narrower.',
+    insight: 'Out of the 4 categories of genres identified in the last visualization, only 2 have consistent durations : first Classical / Instrumental and Ambient / Chill; then second Pop, Latin / World and R&B / Soul. The largest boxes of Electronic and Jazz indicate that many different track lengths are common. Folk, Rock and Hip-Hop have less diversity and their boxes are narrower.',
     readingGuide: 'Compare each family\'s median (center line) and spread (box height) against the Electronic reference line. Sort ascending or descending to find the longest and shortest genres.',
   },
   {
@@ -51,7 +51,7 @@ export const VIZ_CATALOG: VizEntry[] = [
     source: 'viz-3',
     chapter: 'Chapter 03 — Lyrics and lines',
     narrative: 'These 100% stacked bars show the proportion of explicit versus clean tracks for each genre family.',
-    insight: 'A genre family with more of one color could indicate a trend around its content. The categorie previously identified of Electronic / Dance, Rock / Metal and Hip‑hop / Rap have have a high percentage of explicit tracks. R&B / Soul also has a high percentage of them, while genres that are almost entirely clean tend to be instrumental.',
+    insight: 'A genre family with more of one color could indicate a trend around its content. The category previously identified of Electronic / Dance, Rock / Metal and Hip‑hop / Rap have a high percentage of explicit tracks. R&B / Soul also has a high percentage of them, while genres that are almost entirely clean tend to be instrumental.',
     readingGuide: 'Hover a segment to see the exact percentage. Sort by explicit share to rank families from most to least explicit.',
   },
   {
@@ -74,7 +74,7 @@ export const VIZ_CATALOG: VizEntry[] = [
     chapter: 'Chapter 05 — What popularity listens for',
     narrative: 'This chart asks an important question of the dataset: which audio qualities move alongside Spotify popularity? Each bar represents one feature, scored by how strongly it correlates with a track\'s popularity score.',
     insight: 'A positive bar means more of that feature tends to accompany higher popularity, while a negative bar indicates the opposite. In both views, Loudness and Danceability are the top 2 features that correlate positively with popularity, while Instrumentalness and Speechiness are the top 2 features that correlate negatively with it.',
-    readingGuide: 'Switch between Pearson (linear relationship) and Spearman (rank-based) to indentify features that hold their position in both views.',
+    readingGuide: 'Switch between Pearson (linear relationship) and Spearman (rank-based) to identify features that hold their position in both views.',
   },
   {
     id: 6,
@@ -84,7 +84,7 @@ export const VIZ_CATALOG: VizEntry[] = [
     source: 'viz-6',
     chapter: 'Chapter 06 — The link between acousticness and popularity',
     narrative: 'Acousticness measures how unplugged a recording sounds, while dense electronic production scores low. This chapter puts Pop and Rock side by side, using regression lines and binned mean curves to reveal how acousticness relates to popularity in each genre.',
-    insight: 'The slope if almost flat, so the relationship between acousticness and popularity is weak both genres. However, Pop and Rock show opposite trends. Up until around 0.8 acousticness, more acoustic tracks in Pop tend to be more popular, while in Rock, more acoustic tracks tend to be less popular. There is an opposite trend in the last 20% of the acoustic range.',
+    insight: 'The slope is almost flat, so the relationship between acousticness and popularity is weak in both genres. However, Pop and Rock show opposite trends. Up until around 0.8 acousticness, more acoustic tracks in Pop tend to be more popular, while in Rock, more acoustic tracks tend to be less popular. There is an opposite trend in the last 20% of the acoustic range.',
     readingGuide: 'A rising slope of the lines means more acoustic tracks tend to be more popular in that genre; a falling slope means the opposite.',
   },
   {
@@ -94,7 +94,7 @@ export const VIZ_CATALOG: VizEntry[] = [
     subtitle: 'Average popularity by 30-second duration bins',
     source: 'viz-7',
     chapter: 'Chapter 07 — The sweet time range',
-    narrative: 'The attention spans is falling, and a same question can be raised: is there an ideal song length? Tracks are grouped into 30-second duration windows and each bar shows the average popularity within that window.',
+    narrative: 'The attention spans are falling, and a question can be raised: is there an ideal song length? Tracks are grouped into 30-second duration windows and each bar shows the average popularity within that window.',
     insight: 'Unsurprisingly, the three-to-five minute range is the most popular, as a lot of known hits fall into that range. The popularity sharply drops for shorter tracks than 1 minute 30 seconds, but is surprisingly high for tracks longer than 5 minutes.',
     readingGuide: 'Hover any bar to see the average popularity and track count for that duration range. The dashed line marks the overall dataset average for quick comparison.',
   },
@@ -117,7 +117,7 @@ export const VIZ_CATALOG: VizEntry[] = [
     source: 'viz-9 (Plotly → D3)',
     chapter: 'Chapter 09 — Where the crowd gathers',
     narrative: 'While scatter plots show individual tracks, density heatmaps show where they concentrate. The brightest cells define the typical Spotify track. The darker edges represent unusual combinations. Marginal histograms on each edge show the individual distributions.',
-    insight: 'Energy andLoudness seem to increase together. Speechiness and Danceability do not show a clear relationship, but the most common tracks are low Speechiness.',
+    insight: 'Energy and Loudness seem to increase together. Speechiness and Danceability do not show a clear relationship, but the most common tracks are low Speechiness.',
     readingGuide: 'Toggle between Energy/Loudness and Speechiness/Danceability to explore two distinct views of the dataset.',
   },
   {
@@ -128,7 +128,7 @@ export const VIZ_CATALOG: VizEntry[] = [
     source: 'viz-10',
     chapter: 'Chapter 10 — Faces in the data',
     narrative: 'This last visualization focuses on individual artists. The top twelve performers are displayed as a grid of small radar charts, with each one a polygon summarizing that artist\'s audio profile across eight dimensions. Click any card to add or remove that artist from the large comparison radar below, where their shapes overlap for direct comparison.',
-    insight: 'A part of the polygones overlap in the left lower quadrant. Besides high popularity, all artists have a similar high loudness and tempo. The accousticness and duration is rather low for all artists. However, the radar charts also reveal substantial differences in danceability, energy and valence. Some charts have shapes similar to a bow, with lower duration and accousticness in the middle. Others differ greatly and the right higher quadrant is not constant overall.',
+    insight: 'A part of the polygons overlap in the lower-left quadrant. Besides high popularity, all artists have a similar high loudness and tempo. The acousticness and duration is rather low for all artists. However, the radar charts also reveal substantial differences in danceability, energy and valence. Some charts have shapes similar to a bow‑tie, with lower duration and acousticness in the middle. Others differ greatly and the upper‑right quadrant varies significantly across artists.',
     readingGuide: 'Hover a mini card to see exact values. Click cards to toggle artists in the comparison radar.',
   },
 ];
